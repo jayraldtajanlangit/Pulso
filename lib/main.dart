@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'supabase_config.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeSupabase();
-  runApp(const MyApp());
+  runApp(const PulsoApp());
+}
+
+class PulsoApp extends StatelessWidget {
+  const PulsoApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const ProviderScope(child: MyApp());
+  }
 }
 
 class MyApp extends StatelessWidget {

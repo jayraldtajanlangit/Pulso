@@ -12,6 +12,17 @@ class SupabaseConfig {
 
   bool get isConfigured =>
       url.trim().isNotEmpty && publishableKey.trim().isNotEmpty;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is SupabaseConfig &&
+            other.url == url &&
+            other.publishableKey == publishableKey;
+  }
+
+  @override
+  int get hashCode => Object.hash(url, publishableKey);
 }
 
 Future<bool> initializeSupabase([
