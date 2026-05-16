@@ -97,4 +97,34 @@ void main() {
       expect(authService.currentUser, user);
     });
   });
+
+  group('AuthService session lifecycle', () {
+    test('currentUser is set after signIn', () async {
+      final user = MockUser();
+      final response = MockAuthResponse();
+      when(
+        () => mockGoTrue.signInWithPassword(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+        ),
+      ).thenAnswer((_) async => response);
+      when(() => mockGoTrue.currentUser).thenReturn(user);
+
+      await authService.signIn(
+        email: 'test@example.com',
+        password: 'secret123',
+      );
+
+      expect(authService.currentUser, isNotNull);
+    });
+
+    test('currentUser is null after signOut', () async {
+      when(() => mockGoTrue.signOut()).thenAnswer((_) async {});
+      when(() => mockGoTrue.currentUser).thenReturn(null);
+
+      await authService.signOut();
+
+      expect(authService.currentUser, isNull);
+    });
+  });
 }
