@@ -171,9 +171,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     onPressed: state.isLoading
                         ? null
                         : () => controller.signIn(
-                            email: _emailController.text,
-                            password: _passwordController.text,
-                          ),
+                              email: _emailController.text,
+                              password: _passwordController.text,
+                            ),
                     child: Text(state.isLoading ? 'Working...' : 'Sign in'),
                   ),
                   const SizedBox(height: 8),
@@ -181,9 +181,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     onPressed: state.isLoading
                         ? null
                         : () => controller.signUp(
-                            email: _emailController.text,
-                            password: _passwordController.text,
-                          ),
+                              email: _emailController.text,
+                              password: _passwordController.text,
+                            ),
                     child: const Text('Create account'),
                   ),
                 ],
@@ -224,7 +224,7 @@ class AccountScreen extends ConsumerWidget {
                   onPressed: state.isLoading
                       ? null
                       : () =>
-                            ref.read(authControllerProvider.notifier).signOut(),
+                          ref.read(authControllerProvider.notifier).signOut(),
                   child: const Text('Sign out'),
                 ),
               ],
