@@ -155,9 +155,9 @@ class AuthController extends Notifier<AuthState> {
   }
 
   String _message(Object error) {
+    if (error is AuthException) return error.message;
     final message = error.toString();
-    return message.startsWith('AuthException(message: ')
-        ? message.replaceFirst('AuthException(message: ', '').split(',').first
-        : message;
+    final match = RegExp(r'message: ([^,)]+)').firstMatch(message);
+    return match != null ? match.group(1)! : message;
   }
 }

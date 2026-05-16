@@ -6,6 +6,7 @@ import 'package:pulso/auth/auth_repository.dart';
 import 'package:pulso/providers/auth_providers.dart';
 
 import 'package:pulso/main.dart';
+import 'package:pulso/screens/auth_screen.dart';
 
 void main() {
   testWidgets('shows setup guidance when Supabase is not configured', (
