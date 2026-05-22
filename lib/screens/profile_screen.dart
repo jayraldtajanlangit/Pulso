@@ -1,187 +1,314 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../profile/profile_model.dart';
+import '../post/post_model.dart';
+import '../providers/auth_providers.dart';
+import '../providers/post_providers.dart';
 import '../providers/profile_providers.dart';
+import 'edit_profile_screen.dart';
+import 'post_detail_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
-  const ProfileScreen({super.key, required this.userId});
+  const ProfileScreen({
+    super.key,
+    required this.userId,
+    this.isOwnProfile = false,
+  });
 
   final String userId;
+  final bool isOwnProfile;
 
   @override
   ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  final _displayNameController = TextEditingController();
-  final _usernameController = TextEditingController();
-  final _bioController = TextEditingController();
-
-  bool _fieldsFilled = false;
+class _ProfileScreenState extends ConsumerState<ProfileScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-      () => ref
+    _tabController = TabController(length: 2, vsync: this);
+    Future.microtask(() {
+      ref
           .read(profileControllerProvider.notifier)
-          .loadProfile(widget.userId),
-    );
+          .loadProfile(widget.userId);
+      ref.read(postControllerProvider.notifier).loadPosts(widget.userId);
+    });
   }
 
   @override
   void dispose() {
-    _displayNameController.dispose();
-    _usernameController.dispose();
-    _bioController.dispose();
+    _tabController.dispose();
     super.dispose();
-  }
-
-  void _fillFields(ProfileModel? profile) {
-    if (!_fieldsFilled && profile != null) {
-      _displayNameController.text = profile.displayName ?? '';
-      _usernameController.text = profile.username ?? '';
-      _bioController.text = profile.bio ?? '';
-      _fieldsFilled = true;
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(profileControllerProvider);
+    final profileState = ref.watch(profileControllerProvider);
+    final postState = ref.watch(postControllerProvider);
+    final profile = profileState.profile;
 
-    // Populate text fields once the profile loads.
-    ref.listen(
-      profileControllerProvider.select((s) => s.profile),
-      (_, profile) => _fillFields(profile),
-    );
+    final displayName = profile?.displayName ??
+        profile?.username ??
+        ref.read(authControllerProvider).session?.email ??
+        'Profile';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
-      body: state.isLoading
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Text(
+          displayName,
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+        ),
+        centerTitle: false,
+        actions: [
+          if (widget.isOwnProfile)
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () =>
+                  ref.read(authControllerProvider.notifier).signOut(),
+            ),
+        ],
+      ),
+      body: profileState.isLoading && profile == null
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _AvatarSection(
-                    userId: widget.userId,
-                    avatarUrl: state.profile?.avatarUrl,
-                    isUploading: state.isUploading,
-                  ),
-                  const SizedBox(height: 32),
-                  TextField(
-                    key: const Key('displayNameField'),
-                    controller: _displayNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Display name',
-                      border: OutlineInputBorder(),
-                    ),
-                    textCapitalization: TextCapitalization.words,
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    key: const Key('usernameField'),
-                    controller: _usernameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Username',
-                      prefixText: '@',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    key: const Key('bioField'),
-                    controller: _bioController,
-                    decoration: const InputDecoration(
-                      labelText: 'Bio',
-                      border: OutlineInputBorder(),
-                    ),
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 24),
-                  if (state.errorMessage != null) ...[
-                    Text(
-                      state.errorMessage!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
+          : Column(
+              children: [
+                // Profile header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Avatar + stats
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 44,
+                            backgroundColor: const Color(0xFFE0E7FF),
+                            backgroundImage: profile?.avatarUrl != null
+                                ? NetworkImage(profile!.avatarUrl!)
+                                : null,
+                            child: profile?.avatarUrl == null
+                                ? Text(
+                                    displayName.isNotEmpty
+                                        ? displayName[0].toUpperCase()
+                                        : '?',
+                                    style: const TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF6B7280),
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                _StatColumn(
+                                  count: postState.posts.length,
+                                  label: 'Posts',
+                                ),
+                                const _StatColumn(
+                                  count: 0,
+                                  label: 'Followers',
+                                ),
+                                const _StatColumn(
+                                  count: 0,
+                                  label: 'Following',
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  FilledButton(
-                    key: const Key('saveProfileButton'),
-                    onPressed: state.isLoading
-                        ? null
-                        : () => ref
-                              .read(profileControllerProvider.notifier)
-                              .updateProfile(
-                                userId: widget.userId,
-                                displayName:
-                                    _displayNameController.text.trim(),
-                                username: _usernameController.text.trim(),
-                                bio: _bioController.text.trim(),
+                      const SizedBox(height: 12),
+                      // Display name
+                      Text(
+                        displayName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
+                      // Bio
+                      if (profile?.bio != null && profile!.bio!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          profile.bio!,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF374151),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      // Edit Profile / Follow button
+                      if (widget.isOwnProfile)
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.settings, size: 16),
+                            label: const Text('Edit Profile'),
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    EditProfileScreen(userId: widget.userId),
                               ),
-                    child: const Text('Save'),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                          ),
+                        )
+                      else
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            onPressed: () {
+                              // Backend: follow/unfollow
+                            },
+                            style: FilledButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text('Follow'),
+                          ),
+                        ),
+                      const SizedBox(height: 8),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                // Tab bar
+                TabBar(
+                  controller: _tabController,
+                  indicatorColor: Colors.black,
+                  indicatorWeight: 1.5,
+                  dividerColor: const Color(0xFFE5E7EB),
+                  tabs: const [
+                    Tab(icon: Icon(Icons.grid_on, size: 22)),
+                    Tab(icon: Icon(Icons.bookmark_border, size: 22)),
+                  ],
+                ),
+                // Tab content
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      postState.isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : postState.posts.isEmpty
+                              ? const _EmptyPosts()
+                              : _PostsGrid(
+                                  posts: postState.posts,
+                                  onPostTap: (post) => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          PostDetailScreen(post: post),
+                                    ),
+                                  ),
+                                ),
+                      const Center(
+                        child: Text(
+                          'No saved posts',
+                          style: TextStyle(color: Color(0xFF9CA3AF)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
     );
   }
 }
 
-class _AvatarSection extends ConsumerWidget {
-  const _AvatarSection({
-    required this.userId,
-    required this.avatarUrl,
-    required this.isUploading,
-  });
+class _StatColumn extends StatelessWidget {
+  const _StatColumn({required this.count, required this.label});
 
-  final String userId;
-  final String? avatarUrl;
-  final bool isUploading;
+  final int count;
+  final String label;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Center(
-      child: Stack(
-        alignment: Alignment.bottomRight,
-        children: [
-          CircleAvatar(
-            key: const Key('profileAvatar'),
-            radius: 60,
-            backgroundImage:
-                avatarUrl != null ? NetworkImage(avatarUrl!) : null,
-            child: avatarUrl == null
-                ? const Icon(Icons.person, size: 60)
-                : null,
-          ),
-          if (isUploading)
-            const Positioned.fill(
-              child: CircleAvatar(
-                radius: 60,
-                backgroundColor: Colors.black38,
-                child: CircularProgressIndicator(),
-              ),
-            )
-          else
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              child: IconButton(
-                key: const Key('uploadAvatarButton'),
-                icon: const Icon(Icons.camera_alt, size: 18),
-                color: Theme.of(context).colorScheme.onPrimary,
-                onPressed: () => ref
-                    .read(profileControllerProvider.notifier)
-                    .pickAndUploadAvatar(userId),
-              ),
-            ),
-        ],
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          count.toString(),
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13),
+        ),
+      ],
+    );
+  }
+}
+
+class _PostsGrid extends StatelessWidget {
+  const _PostsGrid({required this.posts, required this.onPostTap});
+
+  final List<PostModel> posts;
+  final void Function(PostModel) onPostTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      padding: const EdgeInsets.all(1),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 2,
+        mainAxisSpacing: 2,
+      ),
+      itemCount: posts.length,
+      itemBuilder: (context, i) {
+        final post = posts[i];
+        return GestureDetector(
+          onTap: () => onPostTap(post),
+          child: post.imageUrl != null
+              ? Image.network(
+                  post.imageUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) =>
+                      Container(color: const Color(0xFFE5E7EB)),
+                )
+              : Container(
+                  color: const Color(0xFFE5E7EB),
+                  child: const Icon(
+                    Icons.article_outlined,
+                    color: Color(0xFF9CA3AF),
+                  ),
+                ),
+        );
+      },
+    );
+  }
+}
+
+class _EmptyPosts extends StatelessWidget {
+  const _EmptyPosts();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Text(
+        'No posts yet',
+        style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 16),
       ),
     );
   }
