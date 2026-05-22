@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'providers/auth_providers.dart';
-import 'screens/account_screen.dart';
 import 'screens/auth_screen.dart';
+import 'screens/home_shell.dart';
 import 'screens/supabase_config_screen.dart';
 import 'supabase_config.dart';
 
@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF0F766E),
+          seedColor: const Color(0xFF3B82F6),
           brightness: Brightness.light,
         ),
         scaffoldBackgroundColor: const Color(0xFFF5F7F4),
@@ -57,7 +57,7 @@ class AuthGate extends ConsumerWidget {
     }
 
     if (authState.isSignedIn) {
-      return const AccountScreen();
+      return const HomeShell();
     }
 
     return const AuthScreen();
