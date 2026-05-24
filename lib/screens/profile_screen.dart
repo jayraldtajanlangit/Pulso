@@ -31,9 +31,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     Future.microtask(() {
-      ref
-          .read(profileControllerProvider.notifier)
-          .loadProfile(widget.userId);
+      ref.read(profileControllerProvider.notifier).loadProfile(widget.userId);
       ref.read(postControllerProvider.notifier).loadPosts(widget.userId);
     });
   }
@@ -50,7 +48,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     final postState = ref.watch(postControllerProvider);
     final profile = profileState.profile;
 
-    final displayName = profile?.displayName ??
+    final displayName =
+        profile?.displayName ??
         profile?.username ??
         ref.read(authControllerProvider).session?.email ??
         'Profile';
@@ -76,6 +75,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       ),
       body: profileState.isLoading && profile == null
           ? const Center(child: CircularProgressIndicator())
+          : profileState.errorMessage != null && profile == null
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  profileState.errorMessage!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            )
           : Column(
               children: [
                 // Profile header
@@ -88,10 +98,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       Row(
                         children: [
                           CircleAvatar(
+                            key: const Key('profileAvatar'),
                             radius: 44,
                             backgroundColor: const Color(0xFFE0E7FF),
                             backgroundImage: profile?.avatarUrl != null
                                 ? NetworkImage(profile!.avatarUrl!)
+                                : null,
+                            onBackgroundImageError: profile?.avatarUrl != null
+                                ? (_, _) {}
                                 : null,
                             child: profile?.avatarUrl == null
                                 ? Text(
@@ -115,14 +129,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                                   count: postState.posts.length,
                                   label: 'Posts',
                                 ),
-                                const _StatColumn(
-                                  count: 0,
-                                  label: 'Followers',
-                                ),
-                                const _StatColumn(
-                                  count: 0,
-                                  label: 'Following',
-                                ),
+                                const _StatColumn(count: 0, label: 'Followers'),
+                                const _StatColumn(count: 0, label: 'Following'),
                               ],
                             ),
                           ),
@@ -154,6 +162,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton.icon(
+                            key: const Key('editProfileButton'),
                             icon: const Icon(Icons.settings, size: 16),
                             label: const Text('Edit Profile'),
                             onPressed: () => Navigator.push(
@@ -167,8 +176,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 10),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
                             ),
                           ),
                         )
@@ -210,17 +218,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       postState.isLoading
                           ? const Center(child: CircularProgressIndicator())
                           : postState.posts.isEmpty
-                              ? const _EmptyPosts()
-                              : _PostsGrid(
-                                  posts: postState.posts,
-                                  onPostTap: (post) => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          PostDetailScreen(post: post),
-                                    ),
-                                  ),
+                          ? const _EmptyPosts()
+                          : _PostsGrid(
+                              posts: postState.posts,
+                              onPostTap: (post) => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => PostDetailScreen(post: post),
                                 ),
+                              ),
+                            ),
                       const Center(
                         child: Text(
                           'No saved posts',

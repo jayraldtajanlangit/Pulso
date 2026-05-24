@@ -14,6 +14,7 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
+  final _displayNameController = TextEditingController();
   final _usernameController = TextEditingController();
   final _bioController = TextEditingController();
   bool _fieldsFilled = false;
@@ -30,6 +31,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   @override
   void dispose() {
+    _displayNameController.dispose();
     _usernameController.dispose();
     _bioController.dispose();
     super.dispose();
@@ -37,8 +39,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   void _fillFields(ProfileModel? profile) {
     if (!_fieldsFilled && profile != null) {
-      _usernameController.text =
-          profile.username ?? profile.displayName ?? '';
+      _displayNameController.text = profile.displayName ?? '';
+      _usernameController.text = profile.username ?? '';
       _bioController.text = profile.bio ?? '';
       _fieldsFilled = true;
     }
@@ -66,6 +68,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: FilledButton(
+              key: const Key('saveProfileButton'),
               onPressed: state.isLoading
                   ? null
                   : () async {
@@ -73,6 +76,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           .read(profileControllerProvider.notifier)
                           .updateProfile(
                             userId: widget.userId,
+                            displayName: _displayNameController.text.trim(),
                             username: _usernameController.text.trim(),
                             bio: _bioController.text.trim(),
                           );
@@ -105,6 +109,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             // Avatar
             Center(
               child: GestureDetector(
+                key: const Key('uploadAvatarButton'),
                 onTap: () => ref
                     .read(profileControllerProvider.notifier)
                     .pickAndUploadAvatar(widget.userId),
@@ -112,14 +117,20 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   alignment: Alignment.bottomRight,
                   children: [
                     CircleAvatar(
+                      key: const Key('profileAvatar'),
                       radius: 50,
                       backgroundColor: const Color(0xFFE0E7FF),
                       backgroundImage: state.profile?.avatarUrl != null
                           ? NetworkImage(state.profile!.avatarUrl!)
                           : null,
+                      onBackgroundImageError: state.profile?.avatarUrl != null
+                          ? (_, _) {}
+                          : null,
                       child: state.profile?.avatarUrl == null
                           ? Text(
-                              _usernameController.text.isNotEmpty
+                              _displayNameController.text.isNotEmpty
+                                  ? _displayNameController.text[0].toUpperCase()
+                                  : _usernameController.text.isNotEmpty
                                   ? _usernameController.text[0].toUpperCase()
                                   : '?',
                               style: const TextStyle(
@@ -141,8 +152,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     else
                       CircleAvatar(
                         radius: 16,
-                        backgroundColor:
-                            Theme.of(context).colorScheme.primary,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                         child: const Icon(
                           Icons.camera_alt,
                           size: 16,
@@ -161,6 +171,28 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
             ),
             const SizedBox(height: 32),
+            const Text(
+              'Display name',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              key: const Key('displayNameField'),
+              controller: _displayNameController,
+              decoration: InputDecoration(
+                hintText: 'Your display name',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                ),
+              ),
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: 20),
             // Username
             const Text(
               'Username',
