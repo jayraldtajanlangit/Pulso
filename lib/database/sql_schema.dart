@@ -23,6 +23,27 @@ CREATE TABLE IF NOT EXISTS posts (
 );
 ''';
 
+// Auto-create a profiles row whenever a new auth.users row is inserted.
+// SECURITY DEFINER lets the trigger bypass RLS on profiles for the insert.
+// ON CONFLICT DO NOTHING makes the trigger idempotent.
+const String newUserProfileTriggerSql = '''
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS \$\$
+BEGIN
+  INSERT INTO public.profiles (id)
+  VALUES (NEW.id)
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+END;
+\$\$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+''';
+
 // Run after enabling RLS on both tables.
 const String rlsPoliciesSql = '''
 -- ── Profiles ──────────────────────────────────────────────────────────────
