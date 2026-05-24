@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -91,7 +92,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                             radius: 44,
                             backgroundColor: const Color(0xFFE0E7FF),
                             backgroundImage: profile?.avatarUrl != null
-                                ? NetworkImage(profile!.avatarUrl!)
+                                ? CachedNetworkImageProvider(
+                                    profile!.avatarUrl!,
+                                  )
                                 : null,
                             child: profile?.avatarUrl == null
                                 ? Text(
@@ -281,10 +284,12 @@ class _PostsGrid extends StatelessWidget {
         return GestureDetector(
           onTap: () => onPostTap(post),
           child: post.imageUrl != null
-              ? Image.network(
-                  post.imageUrl!,
+              ? CachedNetworkImage(
+                  imageUrl: post.imageUrl!,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) =>
+                  placeholder: (_, __) =>
+                      Container(color: const Color(0xFFE5E7EB)),
+                  errorWidget: (_, __, ___) =>
                       Container(color: const Color(0xFFE5E7EB)),
                 )
               : Container(

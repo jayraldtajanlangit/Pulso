@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../post/post_model.dart';
@@ -71,11 +72,15 @@ class PostCard extends StatelessWidget {
           GestureDetector(
             onDoubleTap: onLike,
             onTap: onTap,
-            child: Image.network(
-              post.imageUrl!,
+            child: CachedNetworkImage(
+              imageUrl: post.imageUrl!,
               width: double.infinity,
               fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => Container(
+              placeholder: (_, __) => Container(
+                height: 300,
+                color: const Color(0xFFE5E7EB),
+              ),
+              errorWidget: (_, __, ___) => Container(
                 height: 300,
                 color: const Color(0xFFE5E7EB),
                 child: const Icon(
@@ -187,7 +192,8 @@ class _AvatarWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return CircleAvatar(
       radius: 18,
-      backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl!) : null,
+      backgroundImage:
+          avatarUrl != null ? CachedNetworkImageProvider(avatarUrl!) : null,
       backgroundColor: const Color(0xFFE5E7EB),
       child: avatarUrl == null
           ? Text(
