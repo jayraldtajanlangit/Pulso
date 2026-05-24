@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -115,7 +116,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       radius: 50,
                       backgroundColor: const Color(0xFFE0E7FF),
                       backgroundImage: state.profile?.avatarUrl != null
-                          ? NetworkImage(state.profile!.avatarUrl!)
+                          ? CachedNetworkImageProvider(
+                              state.profile!.avatarUrl!,
+                            )
                           : null,
                       child: state.profile?.avatarUrl == null
                           ? Text(
