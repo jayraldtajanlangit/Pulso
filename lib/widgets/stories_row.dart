@@ -47,7 +47,7 @@ class _StoriesRowState extends ConsumerState<StoriesRow> {
         ref.watch(storyControllerProvider.select((s) => s.storiesByUser));
 
     return SizedBox(
-      height: 104,
+      height: 106,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -79,10 +79,9 @@ class _OwnStoryTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final avatarUrl =
-        ref.watch(profileControllerProvider.select((s) => s.profile?.avatarUrl));
-    final username =
-        ref.watch(profileControllerProvider.select((s) => s.profile?.username));
+    final ownProfile = ref.watch(profileControllerProvider);
+    final avatarUrl = ownProfile.profile?.avatarUrl;
+    final username = ownProfile.profile?.username;
     final primary = Theme.of(context).colorScheme.primary;
 
     return Padding(

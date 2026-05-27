@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../providers/profile_providers.dart';
+import '../providers/profile_repository_provider.dart';
 import '../providers/services_providers.dart';
 import 'profile_model.dart';
 import 'profile_repository.dart';
@@ -47,7 +47,8 @@ class ProfileController extends Notifier<ProfileState> {
   ProfileRepository get _repository => ref.read(profileRepositoryProvider);
 
   Future<void> loadProfile(String userId) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    // Reset immediately so stale data from a previous userId is never shown.
+    state = const ProfileState.initial();
     try {
       final profile = await _repository.getProfile(userId);
       state = state.copyWith(isLoading: false, profile: profile);
