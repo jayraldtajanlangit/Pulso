@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/auth_providers.dart';
 import '../providers/follow_providers.dart';
+import '../providers/profile_providers.dart';
 import '../providers/story_providers.dart';
 import '../screens/story_creation_screen.dart';
 import '../screens/story_viewer_screen.dart';
@@ -65,7 +66,7 @@ class _StoriesRowState extends ConsumerState<StoriesRow> {
   }
 }
 
-class _OwnStoryTile extends StatelessWidget {
+class _OwnStoryTile extends ConsumerWidget {
   const _OwnStoryTile({
     required this.currentUserId,
     required this.hasActiveStory,
@@ -77,7 +78,13 @@ class _OwnStoryTile extends StatelessWidget {
   final List<StoryModel> stories;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final avatarUrl =
+        ref.watch(profileControllerProvider.select((s) => s.profile?.avatarUrl));
+    final username =
+        ref.watch(profileControllerProvider.select((s) => s.profile?.username));
+    final primary = Theme.of(context).colorScheme.primary;
+
     return GestureDetector(
       onTap: () {
         if (stories.isNotEmpty) {
@@ -103,35 +110,55 @@ class _OwnStoryTile extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Stack(
+              clipBehavior: Clip.none,
               children: [
+                // Gradient ring when story exists, grey border when not
                 Container(
-                  width: 58,
-                  height: 58,
+                  width: 66,
+                  height: 66,
+                  padding: const EdgeInsets.all(2.5),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: hasActiveStory
-                          ? Theme.of(context).colorScheme.primary
-                          : const Color(0xFFD1D5DB),
-                      width: hasActiveStory ? 2 : 1.5,
+                    gradient: hasActiveStory
+                        ? LinearGradient(
+                            colors: [
+                              const Color(0xFFF58529),
+                              const Color(0xFFDD2A7B),
+                              const Color(0xFF8134AF),
+                              const Color(0xFF515BD4),
+                            ],
+                            begin: Alignment.bottomLeft,
+                            end: Alignment.topRight,
+                          )
+                        : null,
+                    color: hasActiveStory ? null : const Color(0xFFD1D5DB),
+                  ),
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                    ),
+                    padding: const EdgeInsets.all(2),
+                    child: ProfileAvatar(
+                      avatarUrl: avatarUrl,
+                      displayName: username ?? 'You',
+                      radius: 27,
                     ),
                   ),
-                  child: const ClipOval(
-                    child: Icon(Icons.add, color: Color(0xFF9CA3AF), size: 28),
-                  ),
                 ),
+                // + badge in bottom-right
                 Positioned(
                   right: 0,
                   bottom: 0,
                   child: Container(
-                    width: 20,
-                    height: 20,
+                    width: 22,
+                    height: 22,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
+                      color: primary,
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1.5),
+                      border: Border.all(color: Colors.white, width: 2),
                     ),
-                    child: const Icon(Icons.add, color: Colors.white, size: 12),
+                    child: const Icon(Icons.add, color: Colors.white, size: 13),
                   ),
                 ),
               ],
@@ -158,7 +185,6 @@ class _UserStoryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final allSeen = stories.every((s) => s.viewedByCurrentUser);
     final label = stories.first.authorUsername ?? 'user';
-    final primary = Theme.of(context).colorScheme.primary;
 
     return GestureDetector(
       onTap: () => Navigator.push(
@@ -183,10 +209,15 @@ class _UserStoryTile extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: allSeen
                     ? null
-                    : LinearGradient(
-                        colors: [primary, primary.withValues(alpha: 0.6)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                    : const LinearGradient(
+                        colors: [
+                          Color(0xFFF58529),
+                          Color(0xFFDD2A7B),
+                          Color(0xFF8134AF),
+                          Color(0xFF515BD4),
+                        ],
+                        begin: Alignment.bottomLeft,
+                        end: Alignment.topRight,
                       ),
                 color: allSeen ? const Color(0xFFD1D5DB) : null,
               ),
