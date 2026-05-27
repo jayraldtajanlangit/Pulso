@@ -45,16 +45,20 @@ void main() {
     expect(find.byKey(const Key('submitPostButton')), findsOneWidget);
   });
 
-  testWidgets('shows error when submitting empty content', (tester) async {
+  testWidgets('shows error when submitting without an image', (tester) async {
     await tester.pumpWidget(buildScreen(userId: 'user-1'));
     await tester.pump();
 
+    await tester.enterText(
+      find.byKey(const Key('postContentField')),
+      'Caption without image',
+    );
     await tester.tap(find.byKey(const Key('submitPostButton')));
     await tester.pump();
 
     expect(find.byKey(const Key('postErrorMessage')), findsOneWidget);
     expect(
-      find.text('Post content cannot be empty.'),
+      find.text('Please choose an image for your post.'),
       findsOneWidget,
     );
   });
@@ -120,8 +124,27 @@ void main() {
 
   testWidgets('successful post creation calls repository', (tester) async {
     final repo = FakePostRepository();
+    final picker = FakeImagePickerService(
+      result: (
+        bytes: Uint8List.fromList(
+          [
+            137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0,
+            0, 0, 1, 0, 0, 0, 1, 8, 2, 0, 0, 0, 144, 119, 83, 222, 0, 0, 0,
+            12, 73, 68, 65, 84, 8, 215, 99, 248, 207, 192, 0, 0, 0, 2, 0, 1,
+            226, 33, 188, 51, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
+          ],
+        ),
+        mimeType: 'image/png',
+      ),
+    );
 
-    await tester.pumpWidget(buildScreen(userId: 'user-1', repo: repo));
+    await tester.pumpWidget(
+      buildScreen(userId: 'user-1', repo: repo, picker: picker),
+    );
+    await tester.pump();
+
+    // Pick an image first (now required).
+    await tester.tap(find.byKey(const Key('addImageButton')));
     await tester.pump();
 
     await tester.enterText(
@@ -133,6 +156,7 @@ void main() {
     await tester.pump(); // finish async
 
     expect(repo.createPostCalled, isTrue);
+    expect(repo.uploadPostImageCalled, isTrue);
   });
 }
 
@@ -157,7 +181,7 @@ class FakePostRepository implements PostRepository {
     return PostModel(
       id: 'new-id',
       userId: post.userId,
-      content: post.content,
+      caption: post.caption,
       imageUrl: post.imageUrl,
       createdAt: DateTime(2024),
       updatedAt: DateTime(2024),

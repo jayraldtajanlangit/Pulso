@@ -148,11 +148,12 @@ class PostController extends Notifier<PostState> {
 
   Future<void> createPost({
     required String userId,
-    required String content,
+    required String caption,
   }) async {
-    final trimmed = content.trim();
-    if (trimmed.isEmpty) {
-      state = state.copyWith(errorMessage: 'Post content cannot be empty.');
+    final trimmed = caption.trim();
+    final bytes = state.pendingImageBytes;
+    if (bytes == null) {
+      state = state.copyWith(errorMessage: 'Please choose an image for your post.');
       return;
     }
 
@@ -162,16 +163,13 @@ class PostController extends Notifier<PostState> {
       postCreated: false,
     );
     try {
-      String? imageUrl;
-      final bytes = state.pendingImageBytes;
-      if (bytes != null) {
-        imageUrl = await _repository.uploadPostImage(userId, bytes, 'image/jpeg');
-      }
+      final imageUrl =
+          await _repository.uploadPostImage(userId, bytes, 'image/jpeg');
 
       final post = PostModel(
         id: '',
         userId: userId,
-        content: trimmed,
+        caption: trimmed,
         imageUrl: imageUrl,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),

@@ -89,11 +89,11 @@ class PostCard extends ConsumerWidget {
           ),
         ),
         // Image
-        if (post.imageUrl != null)
+        if (post.imageUrl.isNotEmpty)
           GestureDetector(
             onTap: onTap,
             child: CachedNetworkImage(
-              imageUrl: post.imageUrl!,
+              imageUrl: post.imageUrl,
               width: double.infinity,
               fit: BoxFit.cover,
               placeholder: (_, _) => Container(
@@ -167,7 +167,7 @@ class PostCard extends ConsumerWidget {
           ),
         ),
         // Caption
-        if (post.content.isNotEmpty)
+        if (post.caption.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
             child: RichText(
@@ -178,7 +178,7 @@ class PostCard extends ConsumerWidget {
                     text: '$_displayUsername ',
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
-                  TextSpan(text: post.content),
+                  TextSpan(text: post.caption),
                 ],
               ),
             ),

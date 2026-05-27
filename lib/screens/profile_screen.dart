@@ -275,9 +275,9 @@ class _PostsGrid extends StatelessWidget {
         final post = posts[i];
         return GestureDetector(
           onTap: () => onPostTap(post),
-          child: post.imageUrl != null
+          child: post.imageUrl.isNotEmpty
               ? CachedNetworkImage(
-                  imageUrl: post.imageUrl!,
+                  imageUrl: post.imageUrl,
                   fit: BoxFit.cover,
                   placeholder: (_, _) =>
                       Container(color: const Color(0xFFE5E7EB)),
