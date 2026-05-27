@@ -131,3 +131,28 @@ CREATE POLICY "follows_insert_own"
 CREATE POLICY "follows_delete_own"
   ON follows FOR DELETE USING (auth.uid() = follower_id);
 ''';
+
+const String notificationsTableSql = '''
+CREATE TABLE IF NOT EXISTS notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recipient_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  actor_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK (type IN (\'like\', \'comment\', \'follow\', \'message\')),
+  post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
+  read BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "notifications_select_own"
+  ON notifications FOR SELECT USING (auth.uid() = recipient_id);
+
+CREATE POLICY "notifications_insert_authenticated"
+  ON notifications FOR INSERT WITH CHECK (auth.uid() = actor_id);
+
+CREATE POLICY "notifications_update_own"
+  ON notifications FOR UPDATE USING (auth.uid() = recipient_id);
+
+ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
+''';
