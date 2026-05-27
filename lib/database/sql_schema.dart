@@ -1,4 +1,4 @@
-// SQL to run in Supabase SQL editor for profiles and posts setup.
+// SQL to run in Supabase SQL editor to set up all tables, RLS policies, and storage buckets.
 
 const String profilesTableSql = '''
 CREATE TABLE IF NOT EXISTS profiles (
@@ -153,6 +153,9 @@ CREATE POLICY "notifications_insert_authenticated"
 
 CREATE POLICY "notifications_update_own"
   ON notifications FOR UPDATE USING (auth.uid() = recipient_id);
+
+CREATE POLICY "notifications_delete_own"
+  ON notifications FOR DELETE USING (auth.uid() = recipient_id);
 
 ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
 ''';
