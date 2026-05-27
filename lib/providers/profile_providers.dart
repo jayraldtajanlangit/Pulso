@@ -1,14 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../profile/profile_controller.dart';
-import '../profile/profile_repository.dart';
-import 'supabase_providers.dart';
+import 'profile_repository_provider.dart';
 
-final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
-  final client = ref.watch(supabaseClientProvider);
-  if (client == null) throw StateError('Supabase client not initialized');
-  return SupabaseProfileRepository(client);
-});
+export 'profile_repository_provider.dart';
 
-final profileControllerProvider = NotifierProvider.family<ProfileController,
-    ProfileState, String>((userId) => ProfileController(userId));
+final profileControllerProvider =
+    NotifierProvider.family<ProfileController, ProfileState, String>(
+      (userId) => ProfileController(userId),
+    );

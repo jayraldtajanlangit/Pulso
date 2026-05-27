@@ -79,6 +79,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
           ),
           CommentInput(
             postId: widget.post.id,
+            postOwnerId: widget.post.userId,
             currentUserAvatarUrl: currentProfile?.avatarUrl,
             currentUserDisplayName:
                 currentProfile?.displayName ?? currentProfile?.username,

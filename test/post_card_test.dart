@@ -23,6 +23,7 @@ PostModel _samplePost({
     userId: userId,
     caption: caption,
     imageUrl: imageUrl,
+    imageUrls: [imageUrl],
     createdAt: DateTime(2024, 5, 1),
     updatedAt: DateTime(2024, 5, 1),
     authorUsername: 'jane',
@@ -39,18 +40,22 @@ void main() {
     return ProviderScope(
       overrides: [
         likeRepositoryProvider.overrideWithValue(likeRepo ?? _FakeLikeRepo()),
-        commentRepositoryProvider
-            .overrideWithValue(commentRepo ?? _FakeCommentRepo()),
+        commentRepositoryProvider.overrideWithValue(
+          commentRepo ?? _FakeCommentRepo(),
+        ),
         authRepositoryProvider.overrideWithValue(_StubAuth(currentUserId)),
       ],
       child: MaterialApp(
-        home: Scaffold(body: SingleChildScrollView(child: PostCard(post: post))),
+        home: Scaffold(
+          body: SingleChildScrollView(child: PostCard(post: post)),
+        ),
       ),
     );
   }
 
-  testWidgets('renders the post image, caption, and like count',
-      (tester) async {
+  testWidgets('renders the post image, caption, and like count', (
+    tester,
+  ) async {
     final post = _samplePost(caption: 'A lovely sunset');
     final likeRepo = _FakeLikeRepo()..seedLike(postId: 'p1', userId: 'someone');
 
@@ -75,8 +80,9 @@ void main() {
     expect(find.text('0'), findsWidgets);
   });
 
-  testWidgets('shows filled heart and increments count after tap',
-      (tester) async {
+  testWidgets('shows filled heart and increments count after tap', (
+    tester,
+  ) async {
     final post = _samplePost();
     final likeRepo = _FakeLikeRepo();
     await tester.pumpWidget(
@@ -87,6 +93,7 @@ void main() {
     // Initial state: outline heart, 0 likes.
     expect(find.byIcon(Icons.favorite_border), findsOneWidget);
 
+    await tester.ensureVisible(find.byKey(const Key('like_button_p1')));
     await tester.tap(find.byKey(const Key('like_button_p1')));
     await tester.pump();
     await tester.pump();
@@ -126,15 +133,15 @@ class _FakeLikeRepo implements LikeRepository {
   Future<bool> isLikedByUser({
     required String postId,
     required String userId,
-  }) async =>
-      _likes[postId]?.contains(userId) ?? false;
+  }) async => _likes[postId]?.contains(userId) ?? false;
 
   @override
   Future<int> likeCount(String postId) async => _likes[postId]?.length ?? 0;
 
   @override
-  Future<Map<String, int>> likeCountsForPosts(List<String> postIds) async =>
-      {for (final id in postIds) id: _likes[id]?.length ?? 0};
+  Future<Map<String, int>> likeCountsForPosts(List<String> postIds) async => {
+    for (final id in postIds) id: _likes[id]?.length ?? 0,
+  };
 
   @override
   Future<Set<String>> getLikedPostIdsForUser({
@@ -160,8 +167,7 @@ class _FakeCommentRepo implements CommentRepository {
     required String postId,
     required String userId,
     required String body,
-  }) async =>
-      throw UnimplementedError();
+  }) async => throw UnimplementedError();
 
   @override
   Future<void> deleteComment(String commentId) async {}
@@ -172,8 +178,7 @@ class _FakeCommentRepo implements CommentRepository {
   @override
   Future<Map<String, int>> getCommentCountsForPosts(
     List<String> postIds,
-  ) async =>
-      {for (final id in postIds) id: 0};
+  ) async => {for (final id in postIds) id: 0};
 
   @override
   RealtimeChannel subscribeToComments({
@@ -185,7 +190,7 @@ class _FakeCommentRepo implements CommentRepository {
 
 class _StubAuth implements AuthRepository {
   _StubAuth(String userId)
-      : _session = AppAuthSession(userId: userId, email: '$userId@test.local');
+    : _session = AppAuthSession(userId: userId, email: '$userId@test.local');
 
   final AppAuthSession _session;
 
@@ -197,11 +202,17 @@ class _StubAuth implements AuthRepository {
       Stream<AppAuthSession?>.value(_session);
 
   @override
-  Future<void> signIn({required String email, required String password}) async {}
+  Future<void> signIn({
+    required String email,
+    required String password,
+  }) async {}
 
   @override
   Future<void> signOut() async {}
 
   @override
-  Future<void> signUp({required String email, required String password}) async {}
+  Future<void> signUp({
+    required String email,
+    required String password,
+  }) async {}
 }

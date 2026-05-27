@@ -21,7 +21,7 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final state = container.read(profileControllerProvider);
+      final state = container.read(profileControllerProvider('user-1'));
 
       expect(state.isLoading, isTrue);
       expect(state.profile, isNull);
@@ -41,10 +41,10 @@ void main() {
       addTearDown(container.dispose);
 
       await container
-          .read(profileControllerProvider.notifier)
-          .loadProfile('user-1');
+          .read(profileControllerProvider('user-1').notifier)
+          .loadProfile();
 
-      final state = container.read(profileControllerProvider);
+      final state = container.read(profileControllerProvider('user-1'));
       expect(state.isLoading, isFalse);
       expect(state.profile?.id, 'user-1');
       expect(state.errorMessage, isNull);
@@ -63,10 +63,10 @@ void main() {
       addTearDown(container.dispose);
 
       await container
-          .read(profileControllerProvider.notifier)
-          .loadProfile('user-1');
+          .read(profileControllerProvider('user-1').notifier)
+          .loadProfile();
 
-      final state = container.read(profileControllerProvider);
+      final state = container.read(profileControllerProvider('user-1'));
       expect(state.isLoading, isFalse);
       expect(state.profile, isNull);
       expect(state.errorMessage, isNotNull);
@@ -84,14 +84,15 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      await container.read(profileControllerProvider.notifier).updateProfile(
-        userId: 'user-1',
-        displayName: 'Test User',
-        username: 'testuser',
-        bio: 'Hello world',
-      );
+      await container
+          .read(profileControllerProvider('user-1').notifier)
+          .updateProfile(
+            displayName: 'Test User',
+            username: 'testuser',
+            bio: 'Hello world',
+          );
 
-      final state = container.read(profileControllerProvider);
+      final state = container.read(profileControllerProvider('user-1'));
       expect(state.isLoading, isFalse);
       expect(state.profile?.displayName, 'Test User');
       expect(state.profile?.username, 'testuser');
@@ -112,10 +113,10 @@ void main() {
       addTearDown(container.dispose);
 
       await container
-          .read(profileControllerProvider.notifier)
-          .pickAndUploadAvatar('user-1');
+          .read(profileControllerProvider('user-1').notifier)
+          .pickAndUploadAvatar();
 
-      final state = container.read(profileControllerProvider);
+      final state = container.read(profileControllerProvider('user-1'));
       expect(state.isUploading, isFalse);
       expect(state.profile?.avatarUrl, isNotNull);
       expect(repo.uploadAvatarCalled, isTrue);
@@ -133,11 +134,14 @@ void main() {
       addTearDown(container.dispose);
 
       await container
-          .read(profileControllerProvider.notifier)
-          .pickAndUploadAvatar('user-1');
+          .read(profileControllerProvider('user-1').notifier)
+          .pickAndUploadAvatar();
 
       expect(repo.uploadAvatarCalled, isFalse);
-      expect(container.read(profileControllerProvider).isUploading, isFalse);
+      expect(
+        container.read(profileControllerProvider('user-1')).isUploading,
+        isFalse,
+      );
     });
   });
 }
@@ -183,4 +187,8 @@ class FakeImagePickerService implements ImagePickerService {
 
   @override
   Future<PickedImage?> pickImage() async => result;
+
+  @override
+  Future<List<PickedImage>> pickMultipleImages() async =>
+      result == null ? const [] : [result!];
 }

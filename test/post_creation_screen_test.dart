@@ -18,9 +18,7 @@ void main() {
   }) {
     final container = ProviderContainer(
       overrides: [
-        postRepositoryProvider.overrideWithValue(
-          repo ?? FakePostRepository(),
-        ),
+        postRepositoryProvider.overrideWithValue(repo ?? FakePostRepository()),
         imagePickerServiceProvider.overrideWithValue(
           picker ?? FakeImagePickerService(),
         ),
@@ -35,8 +33,9 @@ void main() {
     );
   }
 
-  testWidgets('shows content field, add photo button, and submit button',
-      (tester) async {
+  testWidgets('shows content field, add photo button, and submit button', (
+    tester,
+  ) async {
     await tester.pumpWidget(buildScreen(userId: 'user-1'));
     await tester.pump();
 
@@ -57,10 +56,7 @@ void main() {
     await tester.pump();
 
     expect(find.byKey(const Key('postErrorMessage')), findsOneWidget);
-    expect(
-      find.text('Please choose an image for your post.'),
-      findsOneWidget,
-    );
+    expect(find.text('Please choose an image for your post.'), findsOneWidget);
   });
 
   testWidgets('shows image preview after picking an image', (tester) async {
@@ -69,10 +65,75 @@ void main() {
         bytes: Uint8List.fromList(
           // Minimal valid 1x1 white PNG bytes
           [
-            137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0,
-            0, 0, 1, 0, 0, 0, 1, 8, 2, 0, 0, 0, 144, 119, 83, 222, 0, 0, 0,
-            12, 73, 68, 65, 84, 8, 215, 99, 248, 207, 192, 0, 0, 0, 2, 0, 1,
-            226, 33, 188, 51, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
+            137,
+            80,
+            78,
+            71,
+            13,
+            10,
+            26,
+            10,
+            0,
+            0,
+            0,
+            13,
+            73,
+            72,
+            68,
+            82,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1,
+            8,
+            2,
+            0,
+            0,
+            0,
+            144,
+            119,
+            83,
+            222,
+            0,
+            0,
+            0,
+            12,
+            73,
+            68,
+            65,
+            84,
+            8,
+            215,
+            99,
+            248,
+            207,
+            192,
+            0,
+            0,
+            0,
+            2,
+            0,
+            1,
+            226,
+            33,
+            188,
+            51,
+            0,
+            0,
+            0,
+            0,
+            73,
+            69,
+            78,
+            68,
+            174,
+            66,
+            96,
+            130,
           ],
         ),
         mimeType: 'image/png',
@@ -97,10 +158,75 @@ void main() {
         bytes: Uint8List.fromList(
           // Minimal valid 1x1 white PNG bytes.
           [
-            137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0,
-            0, 0, 1, 0, 0, 0, 1, 8, 2, 0, 0, 0, 144, 119, 83, 222, 0, 0, 0,
-            12, 73, 68, 65, 84, 8, 215, 99, 248, 207, 192, 0, 0, 0, 2, 0, 1,
-            226, 33, 188, 51, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
+            137,
+            80,
+            78,
+            71,
+            13,
+            10,
+            26,
+            10,
+            0,
+            0,
+            0,
+            13,
+            73,
+            72,
+            68,
+            82,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1,
+            8,
+            2,
+            0,
+            0,
+            0,
+            144,
+            119,
+            83,
+            222,
+            0,
+            0,
+            0,
+            12,
+            73,
+            68,
+            65,
+            84,
+            8,
+            215,
+            99,
+            248,
+            207,
+            192,
+            0,
+            0,
+            0,
+            2,
+            0,
+            1,
+            226,
+            33,
+            188,
+            51,
+            0,
+            0,
+            0,
+            0,
+            73,
+            69,
+            78,
+            68,
+            174,
+            66,
+            96,
+            130,
           ],
         ),
         mimeType: 'image/png',
@@ -126,14 +252,77 @@ void main() {
     final repo = FakePostRepository();
     final picker = FakeImagePickerService(
       result: (
-        bytes: Uint8List.fromList(
-          [
-            137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0,
-            0, 0, 1, 0, 0, 0, 1, 8, 2, 0, 0, 0, 144, 119, 83, 222, 0, 0, 0,
-            12, 73, 68, 65, 84, 8, 215, 99, 248, 207, 192, 0, 0, 0, 2, 0, 1,
-            226, 33, 188, 51, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
-          ],
-        ),
+        bytes: Uint8List.fromList([
+          137,
+          80,
+          78,
+          71,
+          13,
+          10,
+          26,
+          10,
+          0,
+          0,
+          0,
+          13,
+          73,
+          72,
+          68,
+          82,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          8,
+          2,
+          0,
+          0,
+          0,
+          144,
+          119,
+          83,
+          222,
+          0,
+          0,
+          0,
+          12,
+          73,
+          68,
+          65,
+          84,
+          8,
+          215,
+          99,
+          248,
+          207,
+          192,
+          0,
+          0,
+          0,
+          2,
+          0,
+          1,
+          226,
+          33,
+          188,
+          51,
+          0,
+          0,
+          0,
+          0,
+          73,
+          69,
+          78,
+          68,
+          174,
+          66,
+          96,
+          130,
+        ]),
         mimeType: 'image/png',
       ),
     );
@@ -170,23 +359,41 @@ class FakePostRepository implements PostRepository {
   Future<List<PostModel>> getPosts(String userId) async => [];
 
   @override
-  Future<List<PostModel>> fetchFeed({int limit = 20, int offset = 0}) async => [];
+  Future<List<PostModel>> fetchFeed({int limit = 20, int offset = 0}) async =>
+      [];
+
+  @override
+  Future<List<PostModel>> fetchFollowingFeed({
+    required List<String> followingIds,
+    int limit = 20,
+    int offset = 0,
+  }) async => [];
 
   @override
   Future<void> deletePost(String postId) async {}
 
   @override
-  Future<PostModel> createPost(PostModel post) async {
+  Future<PostModel> createPost(
+    PostModel post, {
+    List<String> extraImageUrls = const [],
+  }) async {
     createPostCalled = true;
     return PostModel(
       id: 'new-id',
       userId: post.userId,
       caption: post.caption,
       imageUrl: post.imageUrl,
+      imageUrls: [post.imageUrl, ...extraImageUrls],
       createdAt: DateTime(2024),
       updatedAt: DateTime(2024),
     );
   }
+
+  @override
+  Future<PostModel> updatePost(
+    String postId, {
+    required String caption,
+  }) async => throw UnimplementedError();
 
   @override
   Future<String> uploadPostImage(
@@ -197,6 +404,18 @@ class FakePostRepository implements PostRepository {
     uploadPostImageCalled = true;
     return 'https://example.com/$userId/post.jpg';
   }
+
+  @override
+  Future<List<String>> uploadPostImages(
+    String userId,
+    List<({Uint8List bytes, String mimeType})> images,
+  ) async {
+    uploadPostImageCalled = true;
+    return List.generate(
+      images.length,
+      (i) => 'https://example.com/$userId/img$i.jpg',
+    );
+  }
 }
 
 class FakeImagePickerService implements ImagePickerService {
@@ -206,4 +425,8 @@ class FakeImagePickerService implements ImagePickerService {
 
   @override
   Future<PickedImage?> pickImage() async => result;
+
+  @override
+  Future<List<PickedImage>> pickMultipleImages() async =>
+      result == null ? const [] : [result!];
 }

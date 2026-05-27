@@ -65,8 +65,9 @@ class PostState {
       isCreating: isCreating ?? this.isCreating,
       hasMore: hasMore ?? this.hasMore,
       posts: posts ?? this.posts,
-      pendingImages:
-          clearPendingImages ? const [] : pendingImages ?? this.pendingImages,
+      pendingImages: clearPendingImages
+          ? const []
+          : pendingImages ?? this.pendingImages,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
       postCreated: postCreated ?? this.postCreated,
     );
@@ -84,11 +85,7 @@ class PostController extends Notifier<PostState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final posts = await _repository.getPosts(userId);
-      state = state.copyWith(
-        isLoading: false,
-        posts: posts,
-        hasMore: false,
-      );
+      state = state.copyWith(isLoading: false, posts: posts, hasMore: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
@@ -155,18 +152,14 @@ class PostController extends Notifier<PostState> {
         offset: state.posts.length,
       );
       final existingIds = state.posts.map((p) => p.id).toSet();
-      final additions =
-          more.where((p) => !existingIds.contains(p.id)).toList();
+      final additions = more.where((p) => !existingIds.contains(p.id)).toList();
       state = state.copyWith(
         isLoadingMore: false,
         posts: [...state.posts, ...additions],
         hasMore: more.length >= limit,
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoadingMore: false,
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(isLoadingMore: false, errorMessage: e.toString());
     }
   }
 
@@ -189,16 +182,14 @@ class PostController extends Notifier<PostState> {
         hasMore: more.length >= limit,
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoadingMore: false,
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(isLoadingMore: false, errorMessage: e.toString());
     }
   }
 
   Future<void> addImages() async {
-    final picked =
-        await ref.read(imagePickerServiceProvider).pickMultipleImages();
+    final picked = await ref
+        .read(imagePickerServiceProvider)
+        .pickMultipleImages();
     if (picked.isNotEmpty) {
       state = state.copyWith(
         pendingImages: [...state.pendingImages, ...picked],
@@ -221,11 +212,12 @@ class PostController extends Notifier<PostState> {
 
   Future<void> editPost(String postId, {required String caption}) async {
     try {
-      final updated = await _repository.updatePost(postId, caption: caption.trim());
+      final updated = await _repository.updatePost(
+        postId,
+        caption: caption.trim(),
+      );
       state = state.copyWith(
-        posts: state.posts
-            .map((p) => p.id == postId ? updated : p)
-            .toList(),
+        posts: state.posts.map((p) => p.id == postId ? updated : p).toList(),
       );
     } catch (e) {
       state = state.copyWith(errorMessage: e.toString());
@@ -246,9 +238,7 @@ class PostController extends Notifier<PostState> {
   Future<void> pickImage() async {
     final picked = await ref.read(imagePickerServiceProvider).pickImage();
     if (picked != null) {
-      state = state.copyWith(
-        pendingImages: [...state.pendingImages, picked],
-      );
+      state = state.copyWith(pendingImages: [...state.pendingImages, picked]);
     }
   }
 
@@ -259,7 +249,7 @@ class PostController extends Notifier<PostState> {
     final trimmed = caption.trim();
     if (state.pendingImages.isEmpty) {
       state = state.copyWith(
-        errorMessage: 'Please choose at least one image.',
+        errorMessage: 'Please choose an image for your post.',
       );
       return;
     }

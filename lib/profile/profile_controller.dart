@@ -1,8 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../providers/profile_providers.dart';
+import '../providers/profile_repository_provider.dart';
 import '../providers/services_providers.dart';
 import 'profile_model.dart';
+import 'profile_repository.dart';
 
 class ProfileState {
   const ProfileState({
@@ -43,6 +44,7 @@ class ProfileController extends Notifier<ProfileState> {
   ProfileController(this.userId);
 
   final String userId;
+  ProfileRepository get _repository => ref.read(profileRepositoryProvider);
 
   @override
   ProfileState build() {
@@ -53,11 +55,16 @@ class ProfileController extends Notifier<ProfileState> {
   }
 
   Future<void> _load() async {
-    if (userId.isEmpty) return;
-    state = state.copyWith(isLoading: true, clearError: true);
+    await loadProfile();
+  }
+
+  Future<void> loadProfile([String? targetUserId]) async {
+    final id = targetUserId ?? userId;
+    if (id.isEmpty) return;
+    // Reset immediately so stale data from a previous profile is never shown.
+    state = const ProfileState.initial();
     try {
-      final repo = ref.read(profileRepositoryProvider);
-      final profile = await repo.getProfile(userId);
+      final profile = await _repository.getProfile(id);
       state = state.copyWith(isLoading: false, profile: profile);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
@@ -83,8 +90,7 @@ class ProfileController extends Notifier<ProfileState> {
     );
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final repo = ref.read(profileRepositoryProvider);
-      final saved = await repo.upsertProfile(updated);
+      final saved = await _repository.upsertProfile(updated);
       state = state.copyWith(isLoading: false, profile: saved);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
@@ -97,8 +103,7 @@ class ProfileController extends Notifier<ProfileState> {
 
     state = state.copyWith(isUploading: true, clearError: true);
     try {
-      final repo = ref.read(profileRepositoryProvider);
-      final url = await repo.uploadAvatar(
+      final url = await _repository.uploadAvatar(
         userId,
         picked.bytes,
         picked.mimeType,
@@ -113,7 +118,7 @@ class ProfileController extends Notifier<ProfileState> {
         createdAt: current?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
       );
-      final saved = await repo.upsertProfile(updated);
+      final saved = await _repository.upsertProfile(updated);
       state = state.copyWith(isUploading: false, profile: saved);
     } catch (e) {
       state = state.copyWith(isUploading: false, errorMessage: e.toString());

@@ -42,8 +42,9 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });
 
-  testWidgets('shows avatar and form fields after profile loads',
-      (tester) async {
+  testWidgets('shows avatar and form fields after profile loads', (
+    tester,
+  ) async {
     await tester.pumpWidget(buildScreen(userId: 'user-1'));
     await tester.pumpAndSettle(); // allow loadProfile microtask + setState
 
@@ -54,8 +55,9 @@ void main() {
     expect(find.byKey(const Key('saveProfileButton')), findsOneWidget);
   });
 
-  testWidgets('pre-fills text fields with existing profile data',
-      (tester) async {
+  testWidgets('pre-fills text fields with existing profile data', (
+    tester,
+  ) async {
     final repo = FakeProfileRepository(
       profile: ProfileModel(
         id: 'user-1',
@@ -141,8 +143,7 @@ class FakeProfileRepository implements ProfileRepository {
     String userId,
     Uint8List bytes,
     String mimeType,
-  ) async =>
-      'https://example.com/$userId/avatar.jpg';
+  ) async => 'https://example.com/$userId/avatar.jpg';
 }
 
 class FakeImagePickerService implements ImagePickerService {
@@ -152,4 +153,8 @@ class FakeImagePickerService implements ImagePickerService {
 
   @override
   Future<PickedImage?> pickImage() async => result;
+
+  @override
+  Future<List<PickedImage>> pickMultipleImages() async =>
+      result == null ? const [] : [result!];
 }

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pulso/follow/follow_repository.dart';
+import 'package:pulso/profile/profile_model.dart';
 import 'package:pulso/providers/follow_providers.dart';
 
 void main() {
@@ -9,10 +10,7 @@ void main() {
       final repo = FakeFollowRepository();
       await repo.follow(followerId: 'a', followingId: 'b');
 
-      expect(
-        await repo.isFollowing(followerId: 'a', followingId: 'b'),
-        isTrue,
-      );
+      expect(await repo.isFollowing(followerId: 'a', followingId: 'b'), isTrue);
       expect(await repo.getFollowerCount('b'), 1);
       expect(await repo.getFollowingCount('a'), 1);
     });
@@ -31,16 +29,11 @@ void main() {
 
     test('toggleFollow inserts then deletes', () async {
       final repo = FakeFollowRepository();
-      final first =
-          await repo.toggleFollow(followerId: 'a', followingId: 'b');
+      final first = await repo.toggleFollow(followerId: 'a', followingId: 'b');
       expect(first, isTrue);
-      expect(
-        await repo.isFollowing(followerId: 'a', followingId: 'b'),
-        isTrue,
-      );
+      expect(await repo.isFollowing(followerId: 'a', followingId: 'b'), isTrue);
 
-      final second =
-          await repo.toggleFollow(followerId: 'a', followingId: 'b');
+      final second = await repo.toggleFollow(followerId: 'a', followingId: 'b');
       expect(second, isFalse);
       expect(
         await repo.isFollowing(followerId: 'a', followingId: 'b'),
@@ -48,25 +41,25 @@ void main() {
       );
     });
 
-    test('toggleFollow throws when a user tries to follow themselves',
-        () async {
-      final repo = FakeFollowRepository();
-      expect(
-        () => repo.toggleFollow(followerId: 'a', followingId: 'a'),
-        throwsA(isA<ArgumentError>()),
-      );
-    });
+    test(
+      'toggleFollow throws when a user tries to follow themselves',
+      () async {
+        final repo = FakeFollowRepository();
+        expect(
+          () => repo.toggleFollow(followerId: 'a', followingId: 'a'),
+          throwsA(isA<ArgumentError>()),
+        );
+      },
+    );
 
     test('isFollowing returns bool', () async {
       final repo = FakeFollowRepository();
-      final before =
-          await repo.isFollowing(followerId: 'a', followingId: 'b');
+      final before = await repo.isFollowing(followerId: 'a', followingId: 'b');
       expect(before, isA<bool>());
       expect(before, isFalse);
 
       await repo.follow(followerId: 'a', followingId: 'b');
-      final after =
-          await repo.isFollowing(followerId: 'a', followingId: 'b');
+      final after = await repo.isFollowing(followerId: 'a', followingId: 'b');
       expect(after, isTrue);
     });
 
@@ -89,15 +82,11 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      await container.read(followControllerProvider.notifier).toggleFollow(
-        currentUserId: 'a',
-        targetUserId: 'b',
-      );
+      await container
+          .read(followControllerProvider.notifier)
+          .toggleFollow(currentUserId: 'a', targetUserId: 'b');
 
-      expect(
-        container.read(followControllerProvider).isFollowing('b'),
-        isTrue,
-      );
+      expect(container.read(followControllerProvider).isFollowing('b'), isTrue);
       expect(
         container.read(followControllerProvider).statsFor('b').followers,
         1,
@@ -111,10 +100,9 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      await container.read(followControllerProvider.notifier).toggleFollow(
-        currentUserId: 'a',
-        targetUserId: 'a',
-      );
+      await container
+          .read(followControllerProvider.notifier)
+          .toggleFollow(currentUserId: 'a', targetUserId: 'a');
 
       expect(repo.toggleCalls, 0);
       expect(
@@ -223,4 +211,12 @@ class FakeFollowRepository implements FollowRepository {
         .map((e) => e.split('->').first)
         .toList();
   }
+
+  @override
+  Future<List<ProfileModel>> getFollowingProfiles(String userId) async =>
+      const [];
+
+  @override
+  Future<List<ProfileModel>> getFollowerProfiles(String userId) async =>
+      const [];
 }

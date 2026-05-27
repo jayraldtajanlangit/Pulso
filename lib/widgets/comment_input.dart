@@ -10,12 +10,14 @@ class CommentInput extends ConsumerStatefulWidget {
   const CommentInput({
     super.key,
     required this.postId,
+    this.postOwnerId,
     this.currentUserAvatarUrl,
     this.currentUserDisplayName,
     this.hintText = 'Add a comment...',
   });
 
   final String postId;
+  final String? postOwnerId;
   final String? currentUserAvatarUrl;
   final String? currentUserDisplayName;
   final String hintText;
@@ -61,6 +63,7 @@ class _CommentInputState extends ConsumerState<CommentInput> {
       postId: widget.postId,
       userId: session.userId,
       body: text,
+      postOwnerId: widget.postOwnerId,
     );
   }
 
