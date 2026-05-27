@@ -44,6 +44,16 @@ CREATE TABLE IF NOT EXISTS follows (
 );
 ''';
 
+const String bookmarksTableSql = '''
+CREATE TABLE IF NOT EXISTS bookmarks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (user_id, post_id)
+);
+''';
+
 // Run after enabling RLS on both tables.
 const String rlsPoliciesSql = '''
 -- ── Profiles ──────────────────────────────────────────────────────────────
@@ -130,6 +140,18 @@ CREATE POLICY "follows_insert_own"
 
 CREATE POLICY "follows_delete_own"
   ON follows FOR DELETE USING (auth.uid() = follower_id);
+
+-- ── Bookmarks ─────────────────────────────────────────────────────────────
+ALTER TABLE bookmarks ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "bookmarks_select_own"
+  ON bookmarks FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "bookmarks_insert_own"
+  ON bookmarks FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "bookmarks_delete_own"
+  ON bookmarks FOR DELETE USING (auth.uid() = user_id);
 ''';
 
 const String notificationsTableSql = '''
