@@ -34,7 +34,7 @@ class SupabaseCommentRepository implements CommentRepository {
   Future<List<CommentModel>> fetchComments(String postId) async {
     final response = await _client
         .from('comments')
-        .select('*, profiles:user_id(username, display_name, avatar_url)')
+        .select('*, profiles!user_id(username, display_name, avatar_url)')
         .eq('post_id', postId)
         .order('created_at', ascending: true);
 
@@ -56,7 +56,7 @@ class SupabaseCommentRepository implements CommentRepository {
           'user_id': userId,
           'body': body,
         })
-        .select('*, profiles:user_id(username, display_name, avatar_url)')
+        .select('*, profiles!user_id(username, display_name, avatar_url)')
         .single();
     return CommentModel.fromMap(response);
   }
@@ -117,7 +117,7 @@ class SupabaseCommentRepository implements CommentRepository {
             final row = await _client
                 .from('comments')
                 .select(
-                  '*, profiles:user_id(username, display_name, avatar_url)',
+                  '*, profiles!user_id(username, display_name, avatar_url)',
                 )
                 .eq('id', payload.newRecord['id'] as String)
                 .maybeSingle();

@@ -28,7 +28,7 @@ class SupabasePostRepository implements PostRepository {
   final SupabaseClient _client;
 
   static const _selectWithAuthor =
-      '*, profiles:user_id(username, display_name, avatar_url)';
+      '*, profiles!user_id(username, display_name, avatar_url)';
 
   @override
   Future<List<PostModel>> getPosts(String userId) async {

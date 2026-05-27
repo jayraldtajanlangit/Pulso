@@ -40,15 +40,20 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     _didInit = true;
     final userId = ref.read(authControllerProvider).session?.userId;
     if (userId == null) return;
+
+    // Subscribe to realtime channel — guarded because Supabase may not be
+    // initialized in widget tests.
     try {
-      // Start realtime likes channel once.
       ref
           .read(likeControllerProvider.notifier)
           .subscribe(currentUserId: userId);
-      await ref.read(postControllerProvider.notifier).loadFeed();
     } catch (_) {
-      // Supabase not configured (e.g., during widget tests). Render anyway.
+      // Realtime is best-effort; ignore failures here.
     }
+
+    // ALWAYS attempt the feed load. loadFeed catches its own exceptions and
+    // surfaces them via state.errorMessage, which the UI now renders.
+    await ref.read(postControllerProvider.notifier).loadFeed();
   }
 
   Future<void> _refresh() async {
@@ -139,6 +144,13 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
             if (state.isLoading && state.posts.isEmpty)
               const SliverFillRemaining(
                 child: Center(child: CircularProgressIndicator()),
+              )
+            else if (state.errorMessage != null && state.posts.isEmpty)
+              SliverFillRemaining(
+                child: _FeedError(
+                  message: state.errorMessage!,
+                  onRetry: _refresh,
+                ),
               )
             else if (state.posts.isEmpty)
               const SliverFillRemaining(child: _EmptyFeed())
@@ -264,6 +276,51 @@ class _StoryItem extends StatelessWidget {
             style: const TextStyle(fontSize: 11, color: Color(0xFF374151)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FeedError extends StatelessWidget {
+  const _FeedError({required this.message, required this.onRetry});
+
+  final String message;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 48,
+              color: Color(0xFFEF4444),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              "Couldn't load the feed",
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFF6B7280),
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: onRetry,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
       ),
     );
   }
