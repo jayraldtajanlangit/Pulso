@@ -33,11 +33,19 @@ class NotificationModel {
       type: map['type'] as String,
       postId: map['post_id'] as String?,
       read: map['read'] as bool? ?? false,
-      createdAt: DateTime.parse(map['created_at'] as String),
+      createdAt: _parseDate(map['created_at']),
       actorUsername: actor?['username'] as String?,
       actorAvatarUrl: actor?['avatar_url'] as String?,
       postImageUrl: post?['image_url'] as String?,
     );
+  }
+
+  static DateTime _parseDate(Object? raw) {
+    if (raw is String && raw.isNotEmpty) {
+      final parsed = DateTime.tryParse(raw);
+      if (parsed != null) return parsed;
+    }
+    return DateTime.now();
   }
 
   NotificationModel copyWith({bool? read}) {

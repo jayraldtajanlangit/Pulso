@@ -27,6 +27,7 @@ void main() {
       expect(model.actorUsername, 'juan');
       expect(model.actorAvatarUrl, 'https://example.com/av.jpg');
       expect(model.postImageUrl, 'https://example.com/img.jpg');
+      expect(model.createdAt, DateTime.utc(2026, 1, 1));
     });
 
     test('handles null post and actor joins gracefully', () {
@@ -48,6 +49,25 @@ void main() {
       expect(model.actorUsername, isNull);
       expect(model.postImageUrl, isNull);
       expect(model.read, true);
+    });
+
+    test('falls back to now when created_at is null', () {
+      final before = DateTime.now();
+      final map = {
+        'id': 'n3',
+        'recipient_id': 'r1',
+        'actor_id': 'a1',
+        'type': 'like',
+        'post_id': null,
+        'read': false,
+        'created_at': null,
+        'actor': null,
+        'post': null,
+      };
+      final model = NotificationModel.fromMap(map);
+      final after = DateTime.now();
+      expect(model.createdAt.isAfter(before) || model.createdAt.isAtSameMomentAs(before), isTrue);
+      expect(model.createdAt.isBefore(after) || model.createdAt.isAtSameMomentAs(after), isTrue);
     });
 
     test('copyWith only changes read field', () {
