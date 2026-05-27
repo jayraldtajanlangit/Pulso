@@ -159,3 +159,74 @@ CREATE POLICY "notifications_delete_own"
 
 ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
 ''';
+
+const String storiesTableSql = '''
+CREATE TABLE IF NOT EXISTS music_clips (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  artist TEXT NOT NULL,
+  audio_url TEXT NOT NULL,
+  cover_url TEXT,
+  duration_seconds INT NOT NULL DEFAULT 30,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS stories (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  image_url TEXT NOT NULL,
+  music_clip_id UUID REFERENCES music_clips(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '24 hours')
+);
+
+CREATE TABLE IF NOT EXISTS story_views (
+  story_id UUID NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+  viewer_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  viewed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (story_id, viewer_id)
+);
+
+ALTER TABLE music_clips ENABLE ROW LEVEL SECURITY;
+ALTER TABLE stories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE story_views ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "music_clips_select_all"
+  ON music_clips FOR SELECT USING (true);
+
+CREATE POLICY "stories_select_all"
+  ON stories FOR SELECT USING (true);
+
+CREATE POLICY "stories_insert_own"
+  ON stories FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "stories_delete_own"
+  ON stories FOR DELETE USING (auth.uid() = user_id);
+
+CREATE POLICY "story_views_select_all"
+  ON story_views FOR SELECT USING (true);
+
+CREATE POLICY "story_views_insert_authenticated"
+  ON story_views FOR INSERT WITH CHECK (auth.uid() = viewer_id);
+
+-- Storage buckets
+INSERT INTO storage.buckets (id, name, public)
+  VALUES ('stories', 'stories', true)
+  ON CONFLICT DO NOTHING;
+
+INSERT INTO storage.buckets (id, name, public)
+  VALUES ('music', 'music', true)
+  ON CONFLICT DO NOTHING;
+
+CREATE POLICY "stories_images_select_all"
+  ON storage.objects FOR SELECT USING (bucket_id = 'stories');
+
+CREATE POLICY "stories_images_insert_own"
+  ON storage.objects FOR INSERT WITH CHECK (
+    bucket_id = 'stories'
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+CREATE POLICY "music_files_select_all"
+  ON storage.objects FOR SELECT USING (bucket_id = 'music');
+''';
