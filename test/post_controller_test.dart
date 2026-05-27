@@ -42,10 +42,9 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      await container.read(postControllerProvider.notifier).createPost(
-        userId: 'user-1',
-        caption: 'no image',
-      );
+      await container
+          .read(postControllerProvider.notifier)
+          .createPost(userId: 'user-1', caption: 'no image');
 
       expect(repo.createPostCalled, isFalse);
       expect(
@@ -73,10 +72,9 @@ void main() {
         isNotNull,
       );
 
-      await container.read(postControllerProvider.notifier).createPost(
-        userId: 'user-1',
-        caption: 'Post with image',
-      );
+      await container
+          .read(postControllerProvider.notifier)
+          .createPost(userId: 'user-1', caption: 'Post with image');
 
       final state = container.read(postControllerProvider);
       expect(state.postCreated, isTrue);
@@ -86,30 +84,34 @@ void main() {
       expect(repo.uploadPostImageCalled, isTrue);
     });
 
-    test('createPost allows an empty caption when an image is present',
-        () async {
-      final repo = FakePostRepository();
-      final picker = FakeImagePickerService(
-        result: (bytes: Uint8List.fromList([4, 5, 6]), mimeType: 'image/jpeg'),
-      );
-      final container = ProviderContainer.test(
-        overrides: [
-          postRepositoryProvider.overrideWithValue(repo),
-          imagePickerServiceProvider.overrideWithValue(picker),
-        ],
-      );
-      addTearDown(container.dispose);
+    test(
+      'createPost allows an empty caption when an image is present',
+      () async {
+        final repo = FakePostRepository();
+        final picker = FakeImagePickerService(
+          result: (
+            bytes: Uint8List.fromList([4, 5, 6]),
+            mimeType: 'image/jpeg',
+          ),
+        );
+        final container = ProviderContainer.test(
+          overrides: [
+            postRepositoryProvider.overrideWithValue(repo),
+            imagePickerServiceProvider.overrideWithValue(picker),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      await container.read(postControllerProvider.notifier).pickImage();
-      await container.read(postControllerProvider.notifier).createPost(
-        userId: 'user-1',
-        caption: '   ',
-      );
+        await container.read(postControllerProvider.notifier).pickImage();
+        await container
+            .read(postControllerProvider.notifier)
+            .createPost(userId: 'user-1', caption: '   ');
 
-      final state = container.read(postControllerProvider);
-      expect(state.postCreated, isTrue);
-      expect(state.posts.first.caption, '');
-    });
+        final state = container.read(postControllerProvider);
+        expect(state.postCreated, isTrue);
+        expect(state.posts.first.caption, '');
+      },
+    );
 
     test('loadPosts fetches posts for user', () async {
       final repo = FakePostRepository(
@@ -135,9 +137,7 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      await container
-          .read(postControllerProvider.notifier)
-          .loadPosts('user-1');
+      await container.read(postControllerProvider.notifier).loadPosts('user-1');
 
       final state = container.read(postControllerProvider);
       expect(state.isLoading, isFalse);
@@ -164,10 +164,7 @@ void main() {
       );
 
       container.read(postControllerProvider.notifier).clearPendingImage();
-      expect(
-        container.read(postControllerProvider).pendingImageBytes,
-        isNull,
-      );
+      expect(container.read(postControllerProvider).pendingImageBytes, isNull);
     });
   });
 }
@@ -195,8 +192,16 @@ class FakePostRepository implements PostRepository {
     required List<String> followingIds,
     int limit = 20,
     int offset = 0,
-  }) async =>
-      _posts.where((p) => followingIds.contains(p.userId)).toList();
+  }) async => _posts.where((p) => followingIds.contains(p.userId)).toList();
+
+  @override
+  Future<List<PostModel>> getPostsByIds(List<String> ids) async =>
+      _posts.where((p) => ids.contains(p.id)).toList();
+
+  @override
+  Future<void> deletePost(String postId) async {
+    _posts.removeWhere((p) => p.id == postId);
+  }
 
   @override
   Future<PostModel> createPost(
@@ -234,11 +239,6 @@ class FakePostRepository implements PostRepository {
   }
 
   @override
-  Future<void> deletePost(String postId) async {
-    _posts.removeWhere((p) => p.id == postId);
-  }
-
-  @override
   Future<String> uploadPostImage(
     String userId,
     Uint8List bytes,
@@ -254,7 +254,10 @@ class FakePostRepository implements PostRepository {
     List<({Uint8List bytes, String mimeType})> images,
   ) async {
     uploadPostImageCalled = true;
-    return List.generate(images.length, (i) => 'https://example.com/$userId/img$i.jpg');
+    return List.generate(
+      images.length,
+      (i) => 'https://example.com/$userId/img$i.jpg',
+    );
   }
 }
 
@@ -268,5 +271,5 @@ class FakeImagePickerService implements ImagePickerService {
 
   @override
   Future<List<PickedImage>> pickMultipleImages() async =>
-      result != null ? [result!] : [];
+      result == null ? const [] : [result!];
 }

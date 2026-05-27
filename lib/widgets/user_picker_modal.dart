@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../profile/profile_model.dart';
+import '../providers/auth_providers.dart';
 import '../providers/follow_providers.dart';
-import '../providers/supabase_providers.dart';
 import 'profile_avatar.dart';
 
 Future<ProfileModel?> showUserPickerModal(BuildContext context) {
@@ -47,45 +47,47 @@ class _UserPickerContentState extends ConsumerState<_UserPickerContent> {
 
   Future<void> _loadFollowing() async {
     try {
-      final client = ref.read(supabaseClientProvider);
-      if (client == null) return;
-
-      final ids =
-          ref.read(followControllerProvider).followingByCurrentUser.toList();
-      if (ids.isEmpty) {
+      final userId = ref.read(authControllerProvider).session?.userId;
+      if (userId == null) {
+        if (!mounted) return;
         setState(() => _isLoading = false);
         return;
       }
 
-      final response = await client
-          .from('profiles')
-          .select(
-              'id, username, display_name, avatar_url, bio, created_at, updated_at')
-          .inFilter('id', ids);
+      final profiles = await ref
+          .read(followRepositoryProvider)
+          .getFollowingProfiles(userId);
 
-      final profiles = (response as List)
-          .map((r) => ProfileModel.fromMap(r as Map<String, dynamic>))
-          .toList();
-
+      if (!mounted) return;
       setState(() {
         _profiles = profiles;
-        _filtered = profiles;
+        _filtered = _filterProfiles(profiles, _searchController.text);
         _isLoading = false;
       });
     } catch (_) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
     }
   }
 
   void _onSearch() {
-    final query = _searchController.text.toLowerCase();
     setState(() {
-      _filtered = _profiles
-          .where((p) =>
-              (p.username ?? '').toLowerCase().contains(query) ||
-              (p.displayName ?? '').toLowerCase().contains(query))
-          .toList();
+      _filtered = _filterProfiles(_profiles, _searchController.text);
     });
+  }
+
+  List<ProfileModel> _filterProfiles(
+    List<ProfileModel> profiles,
+    String query,
+  ) {
+    final normalized = query.toLowerCase();
+    return profiles
+        .where(
+          (p) =>
+              (p.username ?? '').toLowerCase().contains(normalized) ||
+              (p.displayName ?? '').toLowerCase().contains(normalized),
+        )
+        .toList();
   }
 
   @override
@@ -134,37 +136,35 @@ class _UserPickerContentState extends ConsumerState<_UserPickerContent> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _filtered.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'No users found',
-                          style: TextStyle(color: Color(0xFF9CA3AF)),
+                ? const Center(
+                    child: Text(
+                      'No users found',
+                      style: TextStyle(color: Color(0xFF9CA3AF)),
+                    ),
+                  )
+                : ListView.builder(
+                    controller: scrollController,
+                    itemCount: _filtered.length,
+                    itemBuilder: (context, i) {
+                      final profile = _filtered[i];
+                      return ListTile(
+                        leading: ProfileAvatar(
+                          avatarUrl: profile.avatarUrl,
+                          displayName:
+                              profile.displayName ?? profile.username ?? '?',
+                          radius: 20,
                         ),
-                      )
-                    : ListView.builder(
-                        controller: scrollController,
-                        itemCount: _filtered.length,
-                        itemBuilder: (context, i) {
-                          final profile = _filtered[i];
-                          return ListTile(
-                            leading: ProfileAvatar(
-                              avatarUrl: profile.avatarUrl,
-                              displayName: profile.displayName ??
-                                  profile.username ??
-                                  '?',
-                              radius: 20,
-                            ),
-                            title: Text(
-                              profile.username ?? profile.displayName ?? '?',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                            subtitle: profile.displayName != null
-                                ? Text(profile.displayName!)
-                                : null,
-                            onTap: () => Navigator.of(context).pop(profile),
-                          );
-                        },
-                      ),
+                        title: Text(
+                          profile.username ?? profile.displayName ?? '?',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: profile.displayName != null
+                            ? Text(profile.displayName!)
+                            : null,
+                        onTap: () => Navigator.of(context).pop(profile),
+                      );
+                    },
+                  ),
           ),
         ],
       ),

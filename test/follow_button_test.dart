@@ -41,14 +41,11 @@ void main() {
     expect(find.text('Following'), findsNothing);
   });
 
-  testWidgets('hides itself when the target is the current user',
-      (tester) async {
+  testWidgets('hides itself when the target is the current user', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      build(
-        repo: _FakeFollowRepo(),
-        auth: _StubAuth('me'),
-        targetUserId: 'me',
-      ),
+      build(repo: _FakeFollowRepo(), auth: _StubAuth('me'), targetUserId: 'me'),
     );
     await tester.pump();
 
@@ -59,11 +56,7 @@ void main() {
   testWidgets('tap toggles to Following label', (tester) async {
     final repo = _FakeFollowRepo();
     await tester.pumpWidget(
-      build(
-        repo: repo,
-        auth: _StubAuth('me'),
-        targetUserId: 'other',
-      ),
+      build(repo: repo, auth: _StubAuth('me'), targetUserId: 'other'),
     );
     await tester.pump();
 
@@ -122,8 +115,7 @@ class _FakeFollowRepo implements FollowRepository {
   Future<bool> isFollowing({
     required String followerId,
     required String followingId,
-  }) async =>
-      _edges.contains(_key(followerId, followingId));
+  }) async => _edges.contains(_key(followerId, followingId));
 
   @override
   Future<int> getFollowerCount(String userId) async =>
@@ -146,15 +138,17 @@ class _FakeFollowRepo implements FollowRepository {
       .toList();
 
   @override
-  Future<List<ProfileModel>> getFollowingProfiles(String userId) async => [];
+  Future<List<ProfileModel>> getFollowingProfiles(String userId) async =>
+      const [];
 
   @override
-  Future<List<ProfileModel>> getFollowerProfiles(String userId) async => [];
+  Future<List<ProfileModel>> getFollowerProfiles(String userId) async =>
+      const [];
 }
 
 class _StubAuth implements AuthRepository {
   _StubAuth(String userId)
-      : _session = AppAuthSession(userId: userId, email: '$userId@test.local');
+    : _session = AppAuthSession(userId: userId, email: '$userId@test.local');
 
   final AppAuthSession _session;
 
@@ -166,11 +160,17 @@ class _StubAuth implements AuthRepository {
       Stream<AppAuthSession?>.value(_session);
 
   @override
-  Future<void> signIn({required String email, required String password}) async {}
+  Future<void> signIn({
+    required String email,
+    required String password,
+  }) async {}
 
   @override
   Future<void> signOut() async {}
 
   @override
-  Future<void> signUp({required String email, required String password}) async {}
+  Future<void> signUp({
+    required String email,
+    required String password,
+  }) async {}
 }

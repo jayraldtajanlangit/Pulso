@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../post/post_model.dart';
@@ -61,7 +62,9 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
     if (userId == null) return;
 
     try {
-      ref.read(likeControllerProvider.notifier).subscribe(currentUserId: userId);
+      ref
+          .read(likeControllerProvider.notifier)
+          .subscribe(currentUserId: userId);
     } catch (_) {}
 
     await Future.wait([
@@ -94,7 +97,10 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
+    final state = ref.read(postControllerProvider);
+    if (state.isLoadingMore || !state.hasMore) return;
     final position = _scrollController.position;
+    if (position.userScrollDirection != ScrollDirection.reverse) return;
     if (position.pixels >= position.maxScrollExtent - 400) {
       try {
         if (_isFollowingTab) {
@@ -120,13 +126,10 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
 
     try {
       final ids = posts.map((p) => p.id).toList();
-      ref.read(likeControllerProvider.notifier).loadForPosts(
-        postIds: ids,
-        currentUserId: userId,
-      );
       ref
-          .read(commentControllerProvider.notifier)
-          .loadCountsForPosts(ids);
+          .read(likeControllerProvider.notifier)
+          .loadForPosts(postIds: ids, currentUserId: userId);
+      ref.read(commentControllerProvider.notifier).loadCountsForPosts(ids);
     } catch (_) {
       // Supabase not configured. Skip hydration.
     }
@@ -171,8 +174,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
               Consumer(
                 builder: (context, ref, _) {
                   final unread = ref.watch(
-                    notificationControllerProvider
-                        .select((s) => s.unreadCount),
+                    notificationControllerProvider.select((s) => s.unreadCount),
                   );
                   if (unread == 0) return const SizedBox.shrink();
                   return Positioned(
@@ -225,10 +227,15 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
         onRefresh: _refresh,
         child: CustomScrollView(
           controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             const SliverToBoxAdapter(child: StoriesRow()),
             const SliverToBoxAdapter(
-              child: Divider(height: 1, thickness: 0.5, color: Color(0xFFE5E7EB)),
+              child: Divider(
+                height: 1,
+                thickness: 0.5,
+                color: Color(0xFFE5E7EB),
+              ),
             ),
             if (state.isLoading && state.posts.isEmpty)
               const SliverFillRemaining(
@@ -249,50 +256,45 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
               )
             else ...[
               SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, i) {
-                    final post = state.posts[i];
-                    return Column(
-                      children: [
-                        PostCard(
-                          post: post,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => PostDetailScreen(post: post),
-                            ),
-                          ),
-                          onComment: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => PostDetailScreen(post: post),
-                            ),
-                          ),
-                          onAvatarTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  ProfileScreen(userId: post.userId),
-                            ),
-                          ),
-                          onUsernameTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  ProfileScreen(userId: post.userId),
-                            ),
+                delegate: SliverChildBuilderDelegate((context, i) {
+                  final post = state.posts[i];
+                  return Column(
+                    children: [
+                      PostCard(
+                        post: post,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PostDetailScreen(post: post),
                           ),
                         ),
-                        const Divider(
-                          height: 1,
-                          thickness: 0.5,
-                          color: Color(0xFFE5E7EB),
+                        onComment: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PostDetailScreen(post: post),
+                          ),
                         ),
-                      ],
-                    );
-                  },
-                  childCount: state.posts.length,
-                ),
+                        onAvatarTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ProfileScreen(userId: post.userId),
+                          ),
+                        ),
+                        onUsernameTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ProfileScreen(userId: post.userId),
+                          ),
+                        ),
+                      ),
+                      const Divider(
+                        height: 1,
+                        thickness: 0.5,
+                        color: Color(0xFFE5E7EB),
+                      ),
+                    ],
+                  );
+                }, childCount: state.posts.length),
               ),
               SliverToBoxAdapter(
                 child: _FeedFooter(
@@ -322,11 +324,7 @@ class _FeedError extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 48,
-              color: Color(0xFFEF4444),
-            ),
+            const Icon(Icons.error_outline, size: 48, color: Color(0xFFEF4444)),
             const SizedBox(height: 12),
             const Text(
               "Couldn't load the feed",
@@ -336,16 +334,10 @@ class _FeedError extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFF6B7280),
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12),
             ),
             const SizedBox(height: 16),
-            FilledButton(
-              onPressed: onRetry,
-              child: const Text('Retry'),
-            ),
+            FilledButton(onPressed: onRetry, child: const Text('Retry')),
           ],
         ),
       ),
@@ -397,11 +389,7 @@ class _EmptyFeed extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.photo_camera_outlined,
-            size: 64,
-            color: Color(0xFFD1D5DB),
-          ),
+          Icon(Icons.photo_camera_outlined, size: 64, color: Color(0xFFD1D5DB)),
           SizedBox(height: 16),
           Text(
             'No posts yet',
@@ -432,11 +420,7 @@ class _EmptyFollowingFeed extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.people_outline,
-            size: 64,
-            color: Color(0xFFD1D5DB),
-          ),
+          Icon(Icons.people_outline, size: 64, color: Color(0xFFD1D5DB)),
           SizedBox(height: 16),
           Text(
             'No posts from people you follow',

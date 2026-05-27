@@ -41,24 +41,39 @@ class ProfileState {
 }
 
 class ProfileController extends Notifier<ProfileState> {
-  @override
-  ProfileState build() => const ProfileState.initial();
+  ProfileController(this.userId);
 
+  final String userId;
   ProfileRepository get _repository => ref.read(profileRepositoryProvider);
 
-  Future<void> loadProfile(String userId) async {
-    // Reset immediately so stale data from a previous userId is never shown.
+  @override
+  ProfileState build() {
+    if (userId.isNotEmpty) {
+      Future.microtask(_load);
+    }
+    return const ProfileState.initial();
+  }
+
+  Future<void> _load() async {
+    await loadProfile();
+  }
+
+  Future<void> loadProfile([String? targetUserId]) async {
+    final id = targetUserId ?? userId;
+    if (id.isEmpty) return;
+    // Reset immediately so stale data from a previous profile is never shown.
     state = const ProfileState.initial();
     try {
-      final profile = await _repository.getProfile(userId);
+      final profile = await _repository.getProfile(id);
       state = state.copyWith(isLoading: false, profile: profile);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 
+  Future<void> reload() => _load();
+
   Future<void> updateProfile({
-    required String userId,
     String? username,
     String? displayName,
     String? bio,
@@ -82,7 +97,7 @@ class ProfileController extends Notifier<ProfileState> {
     }
   }
 
-  Future<void> pickAndUploadAvatar(String userId) async {
+  Future<void> pickAndUploadAvatar() async {
     final picked = await ref.read(imagePickerServiceProvider).pickImage();
     if (picked == null) return;
 

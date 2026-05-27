@@ -23,11 +23,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-      () => ref
-          .read(profileControllerProvider.notifier)
-          .loadProfile(widget.userId),
-    );
+    // Profile auto-loads via the family provider's build() method.
   }
 
   @override
@@ -48,25 +44,28 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _save() async {
-    await ref.read(profileControllerProvider.notifier).updateProfile(
-      userId: widget.userId,
-      username: _usernameController.text.trim(),
-      displayName: _displayNameController.text.trim(),
-      bio: _bioController.text.trim(),
-    );
+    await ref
+        .read(profileControllerProvider(widget.userId).notifier)
+        .updateProfile(
+          username: _usernameController.text.trim(),
+          displayName: _displayNameController.text.trim(),
+          bio: _bioController.text.trim(),
+        );
     if (mounted) Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(profileControllerProvider);
+    final state = ref.watch(profileControllerProvider(widget.userId));
 
     ref.listen(
-      profileControllerProvider.select((s) => s.profile),
+      profileControllerProvider(widget.userId).select((s) => s.profile),
       (_, profile) => _fillFields(profile),
     );
 
-    if (state.isLoading && state.profile == null && state.errorMessage == null) {
+    if (state.isLoading &&
+        state.profile == null &&
+        state.errorMessage == null) {
       return Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
@@ -136,8 +135,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               child: GestureDetector(
                 key: const Key('uploadAvatarButton'),
                 onTap: () => ref
-                    .read(profileControllerProvider.notifier)
-                    .pickAndUploadAvatar(widget.userId),
+                    .read(profileControllerProvider(widget.userId).notifier)
+                    .pickAndUploadAvatar(),
                 child: Stack(
                   alignment: Alignment.bottomRight,
                   children: [
@@ -161,8 +160,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     else
                       CircleAvatar(
                         radius: 16,
-                        backgroundColor:
-                            Theme.of(context).colorScheme.primary,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                         child: const Icon(
                           Icons.camera_alt,
                           size: 16,

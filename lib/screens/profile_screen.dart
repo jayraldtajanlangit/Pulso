@@ -36,15 +36,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     Future.microtask(() {
-      ref.read(profileControllerProvider.notifier).loadProfile(widget.userId);
       ref.read(followControllerProvider.notifier).loadStats(widget.userId);
 
       final currentUserId = ref.read(authControllerProvider).session?.userId;
       if (currentUserId != null && currentUserId != widget.userId) {
-        ref.read(followControllerProvider.notifier).loadFollowState(
-          currentUserId: currentUserId,
-          targetUserId: widget.userId,
-        );
+        ref
+            .read(followControllerProvider.notifier)
+            .loadFollowState(
+              currentUserId: currentUserId,
+              targetUserId: widget.userId,
+            );
       }
     });
   }
@@ -57,14 +58,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   @override
   Widget build(BuildContext context) {
-    final profileState = ref.watch(profileControllerProvider);
+    final profileState = ref.watch(profileControllerProvider(widget.userId));
     final profilePosts = ref.watch(profilePostsProvider(widget.userId));
     final stats = ref.watch(
       followControllerProvider.select((s) => s.statsFor(widget.userId)),
     );
     final profile = profileState.profile;
 
-    final displayName = profile?.displayName ??
+    final displayName =
+        profile?.displayName ??
         profile?.username ??
         ref.read(authControllerProvider).session?.email ??
         'Profile';
@@ -186,8 +188,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 10),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
                             ),
                           ),
                         )

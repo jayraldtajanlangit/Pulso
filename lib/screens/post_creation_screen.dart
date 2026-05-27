@@ -9,8 +9,7 @@ class PostCreationScreen extends ConsumerStatefulWidget {
   final String userId;
 
   @override
-  ConsumerState<PostCreationScreen> createState() =>
-      _PostCreationScreenState();
+  ConsumerState<PostCreationScreen> createState() => _PostCreationScreenState();
 }
 
 class _PostCreationScreenState extends ConsumerState<PostCreationScreen> {
@@ -34,7 +33,10 @@ class _PostCreationScreenState extends ConsumerState<PostCreationScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(postControllerProvider);
 
-    ref.listen(postControllerProvider.select((s) => s.postCreated), (_, created) {
+    ref.listen(postControllerProvider.select((s) => s.postCreated), (
+      _,
+      created,
+    ) {
       if (created && mounted) Navigator.of(context).pop();
     });
 
@@ -46,9 +48,7 @@ class _PostCreationScreenState extends ConsumerState<PostCreationScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _MultiImagePicker(
-              images: state.pendingImages
-                  .map((img) => img.bytes)
-                  .toList(),
+              images: state.pendingImages.map((img) => img.bytes).toList(),
               onAdd: () =>
                   ref.read(postControllerProvider.notifier).addImages(),
               onRemove: (i) =>
@@ -157,6 +157,7 @@ class _MultiImagePicker extends StatelessWidget {
               }
 
               return Stack(
+                key: Key(i == 0 ? 'postImagePreview' : 'postImagePreview_$i'),
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
@@ -174,6 +175,9 @@ class _MultiImagePicker extends StatelessWidget {
                     top: 4,
                     right: 4,
                     child: GestureDetector(
+                      key: Key(
+                        i == 0 ? 'removeImageButton' : 'removeImageButton_$i',
+                      ),
                       onTap: () => onRemove(i),
                       child: const CircleAvatar(
                         backgroundColor: Colors.black54,

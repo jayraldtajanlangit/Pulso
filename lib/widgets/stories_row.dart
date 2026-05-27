@@ -31,20 +31,23 @@ class _StoriesRowState extends ConsumerState<StoriesRow> {
   Future<void> _load() async {
     final userId = ref.read(authControllerProvider).session?.userId;
     if (userId == null) return;
-    final followingIds =
-        ref.read(followControllerProvider).followingByCurrentUser.toList();
-    await ref.read(storyControllerProvider.notifier).loadActiveStories(
-          followingIds: followingIds,
-          currentUserId: userId,
-        );
+    final followingIds = ref
+        .read(followControllerProvider)
+        .followingByCurrentUser
+        .toList();
+    await ref
+        .read(storyControllerProvider.notifier)
+        .loadActiveStories(followingIds: followingIds, currentUserId: userId);
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId =
-        ref.watch(authControllerProvider.select((s) => s.session?.userId));
-    final storiesByUser =
-        ref.watch(storyControllerProvider.select((s) => s.storiesByUser));
+    final currentUserId = ref.watch(
+      authControllerProvider.select((s) => s.session?.userId),
+    );
+    final storiesByUser = ref.watch(
+      storyControllerProvider.select((s) => s.storiesByUser),
+    );
 
     return SizedBox(
       height: 106,
@@ -79,9 +82,11 @@ class _OwnStoryTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ownProfile = ref.watch(profileControllerProvider);
-    final avatarUrl = ownProfile.profile?.avatarUrl;
-    final username = ownProfile.profile?.username;
+    final ownProfile = currentUserId == null
+        ? null
+        : ref.watch(profileControllerProvider(currentUserId!));
+    final avatarUrl = ownProfile?.profile?.avatarUrl;
+    final username = ownProfile?.profile?.username;
     final primary = Theme.of(context).colorScheme.primary;
 
     return Padding(
@@ -113,7 +118,8 @@ class _OwnStoryTile extends ConsumerWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (_) => const StoryCreationScreen()),
+                            builder: (_) => const StoryCreationScreen(),
+                          ),
                         );
                       }
                     },
@@ -159,7 +165,8 @@ class _OwnStoryTile extends ConsumerWidget {
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (_) => const StoryCreationScreen()),
+                          builder: (_) => const StoryCreationScreen(),
+                        ),
                       ),
                       child: Container(
                         width: 22,
@@ -169,8 +176,11 @@ class _OwnStoryTile extends ConsumerWidget {
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2),
                         ),
-                        child: const Icon(Icons.add,
-                            color: Colors.white, size: 13),
+                        child: const Icon(
+                          Icons.add,
+                          color: Colors.white,
+                          size: 13,
+                        ),
                       ),
                     ),
                   ),
