@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/profile_providers.dart';
 import '../providers/services_providers.dart';
 import 'profile_model.dart';
-import 'profile_repository.dart';
 
 class ProfileState {
   const ProfileState({
@@ -41,23 +40,33 @@ class ProfileState {
 }
 
 class ProfileController extends Notifier<ProfileState> {
+  ProfileController(this.userId);
+
+  final String userId;
+
   @override
-  ProfileState build() => const ProfileState.initial();
+  ProfileState build() {
+    if (userId.isNotEmpty) {
+      Future.microtask(_load);
+    }
+    return const ProfileState.initial();
+  }
 
-  ProfileRepository get _repository => ref.read(profileRepositoryProvider);
-
-  Future<void> loadProfile(String userId) async {
+  Future<void> _load() async {
+    if (userId.isEmpty) return;
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final profile = await _repository.getProfile(userId);
+      final repo = ref.read(profileRepositoryProvider);
+      final profile = await repo.getProfile(userId);
       state = state.copyWith(isLoading: false, profile: profile);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 
+  Future<void> reload() => _load();
+
   Future<void> updateProfile({
-    required String userId,
     String? username,
     String? displayName,
     String? bio,
@@ -74,20 +83,22 @@ class ProfileController extends Notifier<ProfileState> {
     );
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final saved = await _repository.upsertProfile(updated);
+      final repo = ref.read(profileRepositoryProvider);
+      final saved = await repo.upsertProfile(updated);
       state = state.copyWith(isLoading: false, profile: saved);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 
-  Future<void> pickAndUploadAvatar(String userId) async {
+  Future<void> pickAndUploadAvatar() async {
     final picked = await ref.read(imagePickerServiceProvider).pickImage();
     if (picked == null) return;
 
     state = state.copyWith(isUploading: true, clearError: true);
     try {
-      final url = await _repository.uploadAvatar(
+      final repo = ref.read(profileRepositoryProvider);
+      final url = await repo.uploadAvatar(
         userId,
         picked.bytes,
         picked.mimeType,
@@ -102,7 +113,7 @@ class ProfileController extends Notifier<ProfileState> {
         createdAt: current?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
       );
-      final saved = await _repository.upsertProfile(updated);
+      final saved = await repo.upsertProfile(updated);
       state = state.copyWith(isUploading: false, profile: saved);
     } catch (e) {
       state = state.copyWith(isUploading: false, errorMessage: e.toString());
