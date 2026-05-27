@@ -189,6 +189,9 @@ class FakePostRepository implements PostRepository {
   }
 
   @override
+  Future<List<PostModel>> getPostsByIds(List<String> postIds) async => [];
+
+  @override
   Future<String> uploadPostImage(
     String userId,
     Uint8List bytes,

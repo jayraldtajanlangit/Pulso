@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../post/post_model.dart';
 import '../providers/auth_providers.dart';
+import '../providers/bookmark_providers.dart';
 import '../providers/comment_providers.dart';
 import '../providers/follow_providers.dart';
 import '../providers/like_providers.dart';
@@ -24,6 +25,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
   String? _lastHydratedFingerprint;
   final _scrollController = ScrollController();
   late final TabController _tabController;
+  final _hiddenPostIds = <String>{};
 
   @override
   void initState() {
@@ -117,9 +119,11 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
         postIds: ids,
         currentUserId: userId,
       );
-      ref
-          .read(commentControllerProvider.notifier)
-          .loadCountsForPosts(ids);
+      ref.read(commentControllerProvider.notifier).loadCountsForPosts(ids);
+      ref.read(bookmarkControllerProvider.notifier).loadForPosts(
+        postIds: ids,
+        userId: userId,
+      );
     } catch (_) {
       // Supabase not configured. Skip hydration.
     }
@@ -129,10 +133,15 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
   Widget build(BuildContext context) {
     final state = ref.watch(postControllerProvider);
     final userId = ref.watch(authControllerProvider).session?.userId;
+    final bookmarkState = ref.watch(bookmarkControllerProvider);
 
     if (userId != null) {
       _hydrateCounts(state.posts, userId);
     }
+
+    final visiblePosts = state.posts
+        .where((p) => !_hiddenPostIds.contains(p.id))
+        .toList();
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -198,7 +207,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                   onRetry: _refresh,
                 ),
               )
-            else if (state.posts.isEmpty)
+            else if (visiblePosts.isEmpty)
               SliverFillRemaining(
                 child: _isFollowingTab
                     ? const _EmptyFollowingFeed()
@@ -208,11 +217,22 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
               SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, i) {
-                    final post = state.posts[i];
+                    final post = visiblePosts[i];
                     return Column(
                       children: [
                         PostCard(
                           post: post,
+                          isBookmarked: bookmarkState.isBookmarked(post.id),
+                          onBookmark: userId == null
+                              ? null
+                              : () => ref
+                                  .read(bookmarkControllerProvider.notifier)
+                                  .toggle(
+                                    postId: post.id,
+                                    userId: userId,
+                                  ),
+                          onHide: () =>
+                              setState(() => _hiddenPostIds.add(post.id)),
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -248,7 +268,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                       ],
                     );
                   },
-                  childCount: state.posts.length,
+                  childCount: visiblePosts.length,
                 ),
               ),
               SliverToBoxAdapter(
