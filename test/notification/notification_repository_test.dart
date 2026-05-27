@@ -2,9 +2,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pulso/notification/notification_model.dart';
 import 'package:pulso/notification/notification_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MockNotificationRepository extends Mock
     implements NotificationRepository {}
+
+class MockRealtimeChannel extends Mock implements RealtimeChannel {}
 
 void main() {
   group('NotificationRepository contract', () {
@@ -45,6 +48,16 @@ void main() {
         ),
         completes,
       );
+    });
+
+    test('subscribe returns a RealtimeChannel', () {
+      final mockChannel = MockRealtimeChannel();
+      when(() => repo.subscribe('user1', any()))
+          .thenReturn(mockChannel);
+
+      final channel = repo.subscribe('user1', (_) {});
+      expect(channel, isA<RealtimeChannel>());
+      verify(() => repo.subscribe('user1', any())).called(1);
     });
   });
 }
