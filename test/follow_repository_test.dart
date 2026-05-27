@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pulso/follow/follow_repository.dart';
+import 'package:pulso/profile/profile_model.dart';
 import 'package:pulso/providers/follow_providers.dart';
 
 void main() {
@@ -223,4 +224,10 @@ class FakeFollowRepository implements FollowRepository {
         .map((e) => e.split('->').first)
         .toList();
   }
+
+  @override
+  Future<List<ProfileModel>> getFollowingProfiles(String userId) async => [];
+
+  @override
+  Future<List<ProfileModel>> getFollowerProfiles(String userId) async => [];
 }

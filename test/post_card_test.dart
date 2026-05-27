@@ -23,6 +23,7 @@ PostModel _samplePost({
     userId: userId,
     caption: caption,
     imageUrl: imageUrl,
+    imageUrls: [imageUrl],
     createdAt: DateTime(2024, 5, 1),
     updatedAt: DateTime(2024, 5, 1),
     authorUsername: 'jane',
@@ -87,6 +88,7 @@ void main() {
     // Initial state: outline heart, 0 likes.
     expect(find.byIcon(Icons.favorite_border), findsOneWidget);
 
+    await tester.ensureVisible(find.byKey(const Key('like_button_p1')));
     await tester.tap(find.byKey(const Key('like_button_p1')));
     await tester.pump();
     await tester.pump();

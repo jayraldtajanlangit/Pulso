@@ -183,4 +183,8 @@ class FakeImagePickerService implements ImagePickerService {
 
   @override
   Future<PickedImage?> pickImage() async => result;
+
+  @override
+  Future<List<PickedImage>> pickMultipleImages() async =>
+      result != null ? [result!] : [];
 }

@@ -157,6 +157,7 @@ class _MultiImagePicker extends StatelessWidget {
               }
 
               return Stack(
+                key: i == 0 ? const Key('postImagePreview') : null,
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
@@ -174,6 +175,7 @@ class _MultiImagePicker extends StatelessWidget {
                     top: 4,
                     right: 4,
                     child: GestureDetector(
+                      key: i == 0 ? const Key('removeImageButton') : null,
                       onTap: () => onRemove(i),
                       child: const CircleAvatar(
                         backgroundColor: Colors.black54,

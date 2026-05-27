@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pulso/auth/auth_repository.dart';
 import 'package:pulso/follow/follow_repository.dart';
+import 'package:pulso/profile/profile_model.dart';
 import 'package:pulso/providers/auth_providers.dart';
 import 'package:pulso/providers/follow_providers.dart';
 import 'package:pulso/widgets/follow_button.dart';
@@ -143,6 +144,12 @@ class _FakeFollowRepo implements FollowRepository {
       .where((e) => e.endsWith('->$userId'))
       .map((e) => e.split('->').first)
       .toList();
+
+  @override
+  Future<List<ProfileModel>> getFollowingProfiles(String userId) async => [];
+
+  @override
+  Future<List<ProfileModel>> getFollowerProfiles(String userId) async => [];
 }
 
 class _StubAuth implements AuthRepository {

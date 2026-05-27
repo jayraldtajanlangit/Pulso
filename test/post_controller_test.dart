@@ -119,6 +119,7 @@ void main() {
             userId: 'user-1',
             caption: 'Seeded post',
             imageUrl: 'https://example.com/p1.jpg',
+            imageUrls: ['https://example.com/p1.jpg'],
             createdAt: DateTime(2024),
             updatedAt: DateTime(2024),
           ),
@@ -190,23 +191,51 @@ class FakePostRepository implements PostRepository {
       List<PostModel>.from(_posts);
 
   @override
-  Future<void> deletePost(String postId) async {
-    _posts.removeWhere((p) => p.id == postId);
-  }
+  Future<List<PostModel>> fetchFollowingFeed({
+    required List<String> followingIds,
+    int limit = 20,
+    int offset = 0,
+  }) async =>
+      _posts.where((p) => followingIds.contains(p.userId)).toList();
 
   @override
-  Future<PostModel> createPost(PostModel post) async {
+  Future<PostModel> createPost(
+    PostModel post, {
+    List<String> extraImageUrls = const [],
+  }) async {
     createPostCalled = true;
     final created = PostModel(
       id: 'new-id',
       userId: post.userId,
       caption: post.caption,
       imageUrl: post.imageUrl,
+      imageUrls: [post.imageUrl, ...extraImageUrls],
       createdAt: DateTime(2024),
       updatedAt: DateTime(2024),
     );
     _posts.add(created);
     return created;
+  }
+
+  @override
+  Future<PostModel> updatePost(String postId, {required String caption}) async {
+    final i = _posts.indexWhere((p) => p.id == postId);
+    final updated = PostModel(
+      id: postId,
+      userId: _posts[i].userId,
+      caption: caption,
+      imageUrl: _posts[i].imageUrl,
+      imageUrls: _posts[i].imageUrls,
+      createdAt: _posts[i].createdAt,
+      updatedAt: DateTime(2024),
+    );
+    _posts[i] = updated;
+    return updated;
+  }
+
+  @override
+  Future<void> deletePost(String postId) async {
+    _posts.removeWhere((p) => p.id == postId);
   }
 
   @override
@@ -218,6 +247,15 @@ class FakePostRepository implements PostRepository {
     uploadPostImageCalled = true;
     return 'https://example.com/$userId/post.jpg';
   }
+
+  @override
+  Future<List<String>> uploadPostImages(
+    String userId,
+    List<({Uint8List bytes, String mimeType})> images,
+  ) async {
+    uploadPostImageCalled = true;
+    return List.generate(images.length, (i) => 'https://example.com/$userId/img$i.jpg');
+  }
 }
 
 class FakeImagePickerService implements ImagePickerService {
@@ -227,4 +265,8 @@ class FakeImagePickerService implements ImagePickerService {
 
   @override
   Future<PickedImage?> pickImage() async => result;
+
+  @override
+  Future<List<PickedImage>> pickMultipleImages() async =>
+      result != null ? [result!] : [];
 }
