@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/post_providers.dart';
 import '../providers/services_providers.dart';
+import '../services/image_picker_service.dart';
 import 'post_model.dart';
 import 'post_repository.dart';
 
@@ -16,18 +17,18 @@ class PostState {
     required this.isCreating,
     required this.hasMore,
     required this.posts,
-    this.pendingImageBytes,
+    required this.pendingImages,
     this.errorMessage,
     this.postCreated = false,
   });
 
-  const PostState.initial()
+  PostState.initial()
     : isLoading = false,
       isLoadingMore = false,
       isCreating = false,
       hasMore = true,
       posts = const [],
-      pendingImageBytes = null,
+      pendingImages = const [],
       errorMessage = null,
       postCreated = false;
 
@@ -36,11 +37,15 @@ class PostState {
   final bool isCreating;
   final bool hasMore;
   final List<PostModel> posts;
-  final Uint8List? pendingImageBytes;
+  final List<PickedImage> pendingImages;
   final String? errorMessage;
 
   /// Flipped to true on successful creation so the screen can pop.
   final bool postCreated;
+
+  // Convenience getter for backward-compat UI checks.
+  Uint8List? get pendingImageBytes =>
+      pendingImages.isNotEmpty ? pendingImages.first.bytes : null;
 
   PostState copyWith({
     bool? isLoading,
@@ -48,10 +53,10 @@ class PostState {
     bool? isCreating,
     bool? hasMore,
     List<PostModel>? posts,
-    Uint8List? pendingImageBytes,
+    List<PickedImage>? pendingImages,
     String? errorMessage,
     bool? postCreated,
-    bool clearPendingImage = false,
+    bool clearPendingImages = false,
     bool clearError = false,
   }) {
     return PostState(
@@ -60,8 +65,8 @@ class PostState {
       isCreating: isCreating ?? this.isCreating,
       hasMore: hasMore ?? this.hasMore,
       posts: posts ?? this.posts,
-      pendingImageBytes:
-          clearPendingImage ? null : pendingImageBytes ?? this.pendingImageBytes,
+      pendingImages:
+          clearPendingImages ? const [] : pendingImages ?? this.pendingImages,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
       postCreated: postCreated ?? this.postCreated,
     );
@@ -70,7 +75,7 @@ class PostState {
 
 class PostController extends Notifier<PostState> {
   @override
-  PostState build() => const PostState.initial();
+  PostState build() => PostState.initial();
 
   PostRepository get _repository => ref.read(postRepositoryProvider);
 
@@ -109,6 +114,62 @@ class PostController extends Notifier<PostState> {
     }
   }
 
+  /// Reset and load the first page of the following-only feed.
+  Future<void> loadFollowingFeed({
+    required List<String> followingIds,
+    int limit = kFeedPageSize,
+  }) async {
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      posts: const [],
+      hasMore: true,
+    );
+    try {
+      final posts = await _repository.fetchFollowingFeed(
+        followingIds: followingIds,
+        limit: limit,
+        offset: 0,
+      );
+      state = state.copyWith(
+        isLoading: false,
+        posts: posts,
+        hasMore: posts.length >= limit,
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+    }
+  }
+
+  /// Append the next page of the following-only feed (infinite scroll).
+  Future<void> loadMoreFollowingFeed({
+    required List<String> followingIds,
+    int limit = kFeedPageSize,
+  }) async {
+    if (state.isLoadingMore || !state.hasMore || state.isLoading) return;
+    state = state.copyWith(isLoadingMore: true, clearError: true);
+    try {
+      final more = await _repository.fetchFollowingFeed(
+        followingIds: followingIds,
+        limit: limit,
+        offset: state.posts.length,
+      );
+      final existingIds = state.posts.map((p) => p.id).toSet();
+      final additions =
+          more.where((p) => !existingIds.contains(p.id)).toList();
+      state = state.copyWith(
+        isLoadingMore: false,
+        posts: [...state.posts, ...additions],
+        hasMore: more.length >= limit,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoadingMore: false,
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
   /// Append the next page of the feed (infinite scroll).
   Future<void> loadMoreFeed({int limit = kFeedPageSize}) async {
     if (state.isLoadingMore || !state.hasMore || state.isLoading) return;
@@ -135,15 +196,60 @@ class PostController extends Notifier<PostState> {
     }
   }
 
-  Future<void> pickImage() async {
-    final picked = await ref.read(imagePickerServiceProvider).pickImage();
-    if (picked != null) {
-      state = state.copyWith(pendingImageBytes: picked.bytes);
+  Future<void> addImages() async {
+    final picked =
+        await ref.read(imagePickerServiceProvider).pickMultipleImages();
+    if (picked.isNotEmpty) {
+      state = state.copyWith(
+        pendingImages: [...state.pendingImages, ...picked],
+      );
     }
   }
 
-  void clearPendingImage() {
-    state = state.copyWith(clearPendingImage: true);
+  void removeImage(int index) {
+    final updated = List<PickedImage>.from(state.pendingImages)
+      ..removeAt(index);
+    state = state.copyWith(pendingImages: updated);
+  }
+
+  void clearPendingImages() {
+    state = state.copyWith(clearPendingImages: true);
+  }
+
+  // Keep old name as alias so existing call-sites don't break.
+  void clearPendingImage() => clearPendingImages();
+
+  Future<void> editPost(String postId, {required String caption}) async {
+    try {
+      final updated = await _repository.updatePost(postId, caption: caption.trim());
+      state = state.copyWith(
+        posts: state.posts
+            .map((p) => p.id == postId ? updated : p)
+            .toList(),
+      );
+    } catch (e) {
+      state = state.copyWith(errorMessage: e.toString());
+    }
+  }
+
+  Future<void> deletePost(String postId) async {
+    try {
+      await _repository.deletePost(postId);
+      state = state.copyWith(
+        posts: state.posts.where((p) => p.id != postId).toList(),
+      );
+    } catch (e) {
+      state = state.copyWith(errorMessage: e.toString());
+    }
+  }
+
+  Future<void> pickImage() async {
+    final picked = await ref.read(imagePickerServiceProvider).pickImage();
+    if (picked != null) {
+      state = state.copyWith(
+        pendingImages: [...state.pendingImages, picked],
+      );
+    }
   }
 
   Future<void> createPost({
@@ -151,9 +257,10 @@ class PostController extends Notifier<PostState> {
     required String caption,
   }) async {
     final trimmed = caption.trim();
-    final bytes = state.pendingImageBytes;
-    if (bytes == null) {
-      state = state.copyWith(errorMessage: 'Please choose an image for your post.');
+    if (state.pendingImages.isEmpty) {
+      state = state.copyWith(
+        errorMessage: 'Please choose at least one image.',
+      );
       return;
     }
 
@@ -163,22 +270,28 @@ class PostController extends Notifier<PostState> {
       postCreated: false,
     );
     try {
-      final imageUrl =
-          await _repository.uploadPostImage(userId, bytes, 'image/jpeg');
+      final urls = await _repository.uploadPostImages(
+        userId,
+        state.pendingImages,
+      );
 
       final post = PostModel(
         id: '',
         userId: userId,
         caption: trimmed,
-        imageUrl: imageUrl,
+        imageUrl: urls.first,
+        imageUrls: urls,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
-      final created = await _repository.createPost(post);
+      final created = await _repository.createPost(
+        post,
+        extraImageUrls: urls.skip(1).toList(),
+      );
       state = state.copyWith(
         isCreating: false,
         posts: [created, ...state.posts],
-        clearPendingImage: true,
+        clearPendingImages: true,
         postCreated: true,
       );
     } catch (e) {

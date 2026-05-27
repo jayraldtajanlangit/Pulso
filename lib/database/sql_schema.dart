@@ -23,6 +23,27 @@ CREATE TABLE IF NOT EXISTS posts (
 );
 ''';
 
+const String commentsTableSql = '''
+CREATE TABLE IF NOT EXISTS comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  body TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+''';
+
+const String followsTableSql = '''
+CREATE TABLE IF NOT EXISTS follows (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  follower_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  following_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (follower_id, following_id),
+  CHECK (follower_id <> following_id)
+);
+''';
+
 // Run after enabling RLS on both tables.
 const String rlsPoliciesSql = '''
 -- ── Profiles ──────────────────────────────────────────────────────────────
@@ -85,4 +106,28 @@ CREATE POLICY "posts_images_insert_own"
     bucket_id = 'posts'
     AND auth.uid()::text = (storage.foldername(name))[1]
   );
+
+-- ── Comments ──────────────────────────────────────────────────────────────
+ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "comments_select_all"
+  ON comments FOR SELECT USING (true);
+
+CREATE POLICY "comments_insert_own"
+  ON comments FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "comments_delete_own"
+  ON comments FOR DELETE USING (auth.uid() = user_id);
+
+-- ── Follows ───────────────────────────────────────────────────────────────
+ALTER TABLE follows ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "follows_select_all"
+  ON follows FOR SELECT USING (true);
+
+CREATE POLICY "follows_insert_own"
+  ON follows FOR INSERT WITH CHECK (auth.uid() = follower_id);
+
+CREATE POLICY "follows_delete_own"
+  ON follows FOR DELETE USING (auth.uid() = follower_id);
 ''';

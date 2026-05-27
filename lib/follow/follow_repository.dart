@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../profile/profile_model.dart';
+
 abstract class FollowRepository {
   /// Returns true if now following, false if unfollowed.
   Future<bool> toggleFollow({
@@ -29,6 +31,10 @@ abstract class FollowRepository {
   Future<List<String>> getFollowingIds(String userId);
 
   Future<List<String>> getFollowerIds(String userId);
+
+  Future<List<ProfileModel>> getFollowingProfiles(String userId);
+
+  Future<List<ProfileModel>> getFollowerProfiles(String userId);
 }
 
 class SupabaseFollowRepository implements FollowRepository {
@@ -149,6 +155,32 @@ class SupabaseFollowRepository implements FollowRepository {
 
     return (response as List)
         .map((row) => (row as Map<String, dynamic>)['follower_id'] as String)
+        .toList();
+  }
+
+  @override
+  Future<List<ProfileModel>> getFollowingProfiles(String userId) async {
+    final response = await _client
+        .from('follows')
+        .select('profiles!following_id(id, username, display_name, avatar_url, bio, created_at, updated_at)')
+        .eq('follower_id', userId);
+    return (response as List)
+        .map((row) => ProfileModel.fromMap(
+              (row as Map<String, dynamic>)['profiles'] as Map<String, dynamic>,
+            ))
+        .toList();
+  }
+
+  @override
+  Future<List<ProfileModel>> getFollowerProfiles(String userId) async {
+    final response = await _client
+        .from('follows')
+        .select('profiles!follower_id(id, username, display_name, avatar_url, bio, created_at, updated_at)')
+        .eq('following_id', userId);
+    return (response as List)
+        .map((row) => ProfileModel.fromMap(
+              (row as Map<String, dynamic>)['profiles'] as Map<String, dynamic>,
+            ))
         .toList();
   }
 }

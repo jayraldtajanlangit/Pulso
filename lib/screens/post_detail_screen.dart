@@ -59,7 +59,10 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  PostCard(post: widget.post),
+                  PostCard(
+                    post: widget.post,
+                    onDeleted: () => Navigator.of(context).pop(),
+                  ),
                   const Divider(height: 1, thickness: 0.5),
                   CommentList(
                     postId: widget.post.id,

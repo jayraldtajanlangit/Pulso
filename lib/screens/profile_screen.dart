@@ -10,6 +10,7 @@ import '../providers/profile_providers.dart';
 import '../widgets/follow_button.dart';
 import '../widgets/profile_avatar.dart';
 import 'edit_profile_screen.dart';
+import 'follow_list_screen.dart';
 import 'post_detail_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -35,15 +36,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     Future.microtask(() {
-      ref
-          .read(profileControllerProvider.notifier)
-          .loadProfile(widget.userId);
-      ref.read(postControllerProvider.notifier).loadPosts(widget.userId);
+      ref.read(profileControllerProvider.notifier).loadProfile(widget.userId);
       ref.read(followControllerProvider.notifier).loadStats(widget.userId);
 
-      // Only load follow-state when looking at someone else's profile.
-      final currentUserId =
-          ref.read(authControllerProvider).session?.userId;
+      final currentUserId = ref.read(authControllerProvider).session?.userId;
       if (currentUserId != null && currentUserId != widget.userId) {
         ref.read(followControllerProvider.notifier).loadFollowState(
           currentUserId: currentUserId,
@@ -62,7 +58,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   @override
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileControllerProvider);
-    final postState = ref.watch(postControllerProvider);
+    final profilePosts = ref.watch(profilePostsProvider(widget.userId));
     final stats = ref.watch(
       followControllerProvider.select((s) => s.statsFor(widget.userId)),
     );
@@ -117,16 +113,34 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
                                 _StatColumn(
-                                  count: postState.posts.length,
+                                  count: profilePosts.asData?.value.length ?? 0,
                                   label: 'Posts',
                                 ),
                                 _StatColumn(
                                   count: stats.followers,
                                   label: 'Followers',
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => FollowListScreen(
+                                        userId: widget.userId,
+                                        mode: FollowListMode.followers,
+                                      ),
+                                    ),
+                                  ),
                                 ),
                                 _StatColumn(
                                   count: stats.following,
                                   label: 'Following',
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => FollowListScreen(
+                                        userId: widget.userId,
+                                        mode: FollowListMode.following,
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -202,20 +216,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   child: TabBarView(
                     controller: _tabController,
                     children: [
-                      postState.isLoading
-                          ? const Center(child: CircularProgressIndicator())
-                          : postState.posts.isEmpty
-                              ? const _EmptyPosts()
-                              : _PostsGrid(
-                                  posts: postState.posts,
-                                  onPostTap: (post) => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          PostDetailScreen(post: post),
-                                    ),
+                      profilePosts.when(
+                        loading: () =>
+                            const Center(child: CircularProgressIndicator()),
+                        error: (e, _) => Center(
+                          child: Text(
+                            'Failed to load posts',
+                            style: TextStyle(color: Colors.grey[500]),
+                          ),
+                        ),
+                        data: (posts) => posts.isEmpty
+                            ? const _EmptyPosts()
+                            : _PostsGrid(
+                                posts: posts,
+                                onPostTap: (post) => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        PostDetailScreen(post: post),
                                   ),
                                 ),
+                              ),
+                      ),
                       const Center(
                         child: Text(
                           'No saved posts',
@@ -232,25 +254,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 }
 
 class _StatColumn extends StatelessWidget {
-  const _StatColumn({required this.count, required this.label});
+  const _StatColumn({required this.count, required this.label, this.onTap});
 
   final int count;
   final String label;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          count.toString(),
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13),
-        ),
-      ],
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Text(
+            count.toString(),
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13),
+          ),
+        ],
+      ),
     );
   }
 }

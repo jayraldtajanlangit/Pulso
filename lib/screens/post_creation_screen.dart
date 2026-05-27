@@ -19,9 +19,8 @@ class _PostCreationScreenState extends ConsumerState<PostCreationScreen> {
   @override
   void initState() {
     super.initState();
-    // Reset the controller state so postCreated flag starts false.
     Future.microtask(
-      () => ref.read(postControllerProvider.notifier).clearPendingImage(),
+      () => ref.read(postControllerProvider.notifier).clearPendingImages(),
     );
   }
 
@@ -35,7 +34,6 @@ class _PostCreationScreenState extends ConsumerState<PostCreationScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(postControllerProvider);
 
-    // Pop on successful post creation.
     ref.listen(postControllerProvider.select((s) => s.postCreated), (_, created) {
       if (created && mounted) Navigator.of(context).pop();
     });
@@ -47,12 +45,14 @@ class _PostCreationScreenState extends ConsumerState<PostCreationScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _ImagePreviewSection(
-              imageBytes: state.pendingImageBytes,
-              onPickImage: () =>
-                  ref.read(postControllerProvider.notifier).pickImage(),
-              onClearImage: () =>
-                  ref.read(postControllerProvider.notifier).clearPendingImage(),
+            _MultiImagePicker(
+              images: state.pendingImages
+                  .map((img) => img.bytes)
+                  .toList(),
+              onAdd: () =>
+                  ref.read(postControllerProvider.notifier).addImages(),
+              onRemove: (i) =>
+                  ref.read(postControllerProvider.notifier).removeImage(i),
             ),
             const SizedBox(height: 20),
             TextField(
@@ -71,8 +71,7 @@ class _PostCreationScreenState extends ConsumerState<PostCreationScreen> {
               Text(
                 state.errorMessage!,
                 key: const Key('postErrorMessage'),
-                style:
-                    TextStyle(color: Theme.of(context).colorScheme.error),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
@@ -101,57 +100,118 @@ class _PostCreationScreenState extends ConsumerState<PostCreationScreen> {
   }
 }
 
-class _ImagePreviewSection extends StatelessWidget {
-  const _ImagePreviewSection({
-    required this.imageBytes,
-    required this.onPickImage,
-    required this.onClearImage,
+class _MultiImagePicker extends StatelessWidget {
+  const _MultiImagePicker({
+    required this.images,
+    required this.onAdd,
+    required this.onRemove,
   });
 
-  final dynamic imageBytes; // Uint8List?
-  final VoidCallback onPickImage;
-  final VoidCallback onClearImage;
+  final List<dynamic> images; // List<Uint8List>
+  final VoidCallback onAdd;
+  final void Function(int index) onRemove;
 
   @override
   Widget build(BuildContext context) {
-    if (imageBytes != null) {
-      return Stack(
-        alignment: Alignment.topRight,
-        children: [
-          ClipRRect(
+    if (images.isEmpty) {
+      return OutlinedButton.icon(
+        key: const Key('addImageButton'),
+        onPressed: onAdd,
+        icon: const Icon(Icons.add_photo_alternate_outlined),
+        label: const Text('Add Photos'),
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(100),
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            child: Image.memory(
-              imageBytes,
-              key: const Key('postImagePreview'),
-              height: 220,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
           ),
-          IconButton(
-            key: const Key('removeImageButton'),
-            icon: const CircleAvatar(
-              backgroundColor: Colors.black54,
-              radius: 16,
-              child: Icon(Icons.close, color: Colors.white, size: 16),
-            ),
-            onPressed: onClearImage,
-          ),
-        ],
+        ),
       );
     }
 
-    return OutlinedButton.icon(
-      key: const Key('addImageButton'),
-      onPressed: onPickImage,
-      icon: const Icon(Icons.add_photo_alternate_outlined),
-      label: const Text('Add Photo'),
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size.fromHeight(100),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: 110,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: images.length + 1,
+            separatorBuilder: (context, index) => const SizedBox(width: 8),
+            itemBuilder: (context, i) {
+              if (i == images.length) {
+                return GestureDetector(
+                  onTap: onAdd,
+                  child: Container(
+                    width: 90,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFFD1D5DB)),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.add_photo_alternate_outlined,
+                      color: Color(0xFF9CA3AF),
+                      size: 32,
+                    ),
+                  ),
+                );
+              }
+
+              return Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: ColoredBox(
+                      color: Colors.black,
+                      child: Image.memory(
+                        images[i],
+                        width: 90,
+                        height: 110,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: GestureDetector(
+                      onTap: () => onRemove(i),
+                      child: const CircleAvatar(
+                        backgroundColor: Colors.black54,
+                        radius: 12,
+                        child: Icon(Icons.close, color: Colors.white, size: 14),
+                      ),
+                    ),
+                  ),
+                  if (i == 0)
+                    Positioned(
+                      bottom: 4,
+                      left: 4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'Cover',
+                          style: TextStyle(color: Colors.white, fontSize: 10),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
         ),
-      ),
+        const SizedBox(height: 6),
+        Text(
+          '${images.length} photo${images.length == 1 ? '' : 's'} selected',
+          style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12),
+        ),
+      ],
     );
   }
 }
