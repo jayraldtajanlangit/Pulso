@@ -47,7 +47,7 @@ class _StoriesRowState extends ConsumerState<StoriesRow> {
         ref.watch(storyControllerProvider.select((s) => s.storiesByUser));
 
     return SizedBox(
-      height: 96,
+      height: 104,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -85,88 +85,105 @@ class _OwnStoryTile extends ConsumerWidget {
         ref.watch(profileControllerProvider.select((s) => s.profile?.username));
     final primary = Theme.of(context).colorScheme.primary;
 
-    return GestureDetector(
-      onTap: () {
-        if (stories.isNotEmpty) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => StoryViewerScreen(
-                storiesByUser: {currentUserId!: stories},
-                initialUserId: currentUserId!,
-              ),
-            ),
-          );
-        } else {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const StoryCreationScreen()),
-          );
-        }
-      },
-      child: Padding(
-        padding: const EdgeInsets.only(right: 16),
+    return Padding(
+      padding: const EdgeInsets.only(right: 16),
+      child: SizedBox(
+        width: 70,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                // Gradient ring when story exists, grey border when not
-                Container(
-                  width: 66,
-                  height: 66,
-                  padding: const EdgeInsets.all(2.5),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: hasActiveStory
-                        ? LinearGradient(
-                            colors: [
-                              const Color(0xFFF58529),
-                              const Color(0xFFDD2A7B),
-                              const Color(0xFF8134AF),
-                              const Color(0xFF515BD4),
-                            ],
-                            begin: Alignment.bottomLeft,
-                            end: Alignment.topRight,
-                          )
-                        : null,
-                    color: hasActiveStory ? null : const Color(0xFFD1D5DB),
-                  ),
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
+            SizedBox(
+              width: 70,
+              height: 70,
+              child: Stack(
+                children: [
+                  // Avatar with ring — tap to view own story
+                  GestureDetector(
+                    onTap: () {
+                      if (stories.isNotEmpty) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => StoryViewerScreen(
+                              storiesByUser: {currentUserId!: stories},
+                              initialUserId: currentUserId!,
+                            ),
+                          ),
+                        );
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const StoryCreationScreen()),
+                        );
+                      }
+                    },
+                    child: Container(
+                      width: 66,
+                      height: 66,
+                      padding: const EdgeInsets.all(2.5),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: hasActiveStory
+                            ? const LinearGradient(
+                                colors: [
+                                  Color(0xFFF58529),
+                                  Color(0xFFDD2A7B),
+                                  Color(0xFF8134AF),
+                                  Color(0xFF515BD4),
+                                ],
+                                begin: Alignment.bottomLeft,
+                                end: Alignment.topRight,
+                              )
+                            : null,
+                        color: hasActiveStory ? null : const Color(0xFFD1D5DB),
+                      ),
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                        ),
+                        padding: const EdgeInsets.all(2),
+                        child: ProfileAvatar(
+                          avatarUrl: avatarUrl,
+                          displayName: username ?? 'You',
+                          radius: 27,
+                        ),
+                      ),
                     ),
-                    padding: const EdgeInsets.all(2),
-                    child: ProfileAvatar(
-                      avatarUrl: avatarUrl,
-                      displayName: username ?? 'You',
-                      radius: 27,
+                  ),
+                  // + badge — always tappable to create a new story
+                  Positioned(
+                    right: 2,
+                    bottom: 2,
+                    child: GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const StoryCreationScreen()),
+                      ),
+                      child: Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: primary,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: const Icon(Icons.add,
+                            color: Colors.white, size: 13),
+                      ),
                     ),
                   ),
-                ),
-                // + badge in bottom-right
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      color: primary,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: const Icon(Icons.add, color: Colors.white, size: 13),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 4),
             const Text(
               'Your story',
               style: TextStyle(fontSize: 11, color: Color(0xFF374151)),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ],
         ),
@@ -198,53 +215,58 @@ class _UserStoryTile extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.only(right: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 62,
-              height: 62,
-              padding: const EdgeInsets.all(2.5),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: allSeen
-                    ? null
-                    : const LinearGradient(
-                        colors: [
-                          Color(0xFFF58529),
-                          Color(0xFFDD2A7B),
-                          Color(0xFF8134AF),
-                          Color(0xFF515BD4),
-                        ],
-                        begin: Alignment.bottomLeft,
-                        end: Alignment.topRight,
-                      ),
-                color: allSeen ? const Color(0xFFD1D5DB) : null,
-              ),
-              child: Container(
-                decoration: const BoxDecoration(
+        child: SizedBox(
+          width: 66,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 66,
+                height: 66,
+                padding: const EdgeInsets.all(2.5),
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white,
+                  gradient: allSeen
+                      ? null
+                      : const LinearGradient(
+                          colors: [
+                            Color(0xFFF58529),
+                            Color(0xFFDD2A7B),
+                            Color(0xFF8134AF),
+                            Color(0xFF515BD4),
+                          ],
+                          begin: Alignment.bottomLeft,
+                          end: Alignment.topRight,
+                        ),
+                  color: allSeen ? const Color(0xFFD1D5DB) : null,
                 ),
-                padding: const EdgeInsets.all(2),
-                child: ProfileAvatar(
-                  avatarUrl: stories.first.authorAvatarUrl,
-                  displayName: label,
-                  radius: 25,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                  ),
+                  padding: const EdgeInsets.all(2),
+                  child: ProfileAvatar(
+                    avatarUrl: stories.first.authorAvatarUrl,
+                    displayName: label,
+                    radius: 25,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: allSeen
-                    ? const Color(0xFF9CA3AF)
-                    : const Color(0xFF374151),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: allSeen
+                      ? const Color(0xFF9CA3AF)
+                      : const Color(0xFF374151),
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
