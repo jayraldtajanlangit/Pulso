@@ -225,12 +225,7 @@ class PostCard extends ConsumerWidget {
                 onPressed: () {},
               ),
               const Spacer(),
-              IconButton(
-                icon: Icon(
-                  isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                ),
-                onPressed: onBookmark,
-              ),
+              _BookmarkButton(initialValue: isBookmarked, onToggle: onBookmark),
             ],
           ),
         ),
@@ -434,6 +429,39 @@ class _CaptionText extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─── Bookmark toggle ──────────────────────────────────────────────────────────
+
+class _BookmarkButton extends StatefulWidget {
+  const _BookmarkButton({required this.initialValue, this.onToggle});
+
+  final bool initialValue;
+  final VoidCallback? onToggle;
+
+  @override
+  State<_BookmarkButton> createState() => _BookmarkButtonState();
+}
+
+class _BookmarkButtonState extends State<_BookmarkButton> {
+  late bool _bookmarked;
+
+  @override
+  void initState() {
+    super.initState();
+    _bookmarked = widget.initialValue;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(_bookmarked ? Icons.bookmark : Icons.bookmark_border),
+      onPressed: () {
+        setState(() => _bookmarked = !_bookmarked);
+        widget.onToggle?.call();
+      },
     );
   }
 }

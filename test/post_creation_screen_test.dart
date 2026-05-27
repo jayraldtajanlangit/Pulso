@@ -173,20 +173,35 @@ class FakePostRepository implements PostRepository {
   Future<List<PostModel>> fetchFeed({int limit = 20, int offset = 0}) async => [];
 
   @override
-  Future<void> deletePost(String postId) async {}
+  Future<List<PostModel>> fetchFollowingFeed({
+    required List<String> followingIds,
+    int limit = 20,
+    int offset = 0,
+  }) async => [];
 
   @override
-  Future<PostModel> createPost(PostModel post) async {
+  Future<PostModel> createPost(
+    PostModel post, {
+    List<String> extraImageUrls = const [],
+  }) async {
     createPostCalled = true;
     return PostModel(
       id: 'new-id',
       userId: post.userId,
       caption: post.caption,
       imageUrl: post.imageUrl,
+      imageUrls: [post.imageUrl, ...extraImageUrls],
       createdAt: DateTime(2024),
       updatedAt: DateTime(2024),
     );
   }
+
+  @override
+  Future<PostModel> updatePost(String postId, {required String caption}) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> deletePost(String postId) async {}
 
   @override
   Future<String> uploadPostImage(
@@ -197,6 +212,15 @@ class FakePostRepository implements PostRepository {
     uploadPostImageCalled = true;
     return 'https://example.com/$userId/post.jpg';
   }
+
+  @override
+  Future<List<String>> uploadPostImages(
+    String userId,
+    List<({Uint8List bytes, String mimeType})> images,
+  ) async {
+    uploadPostImageCalled = true;
+    return List.generate(images.length, (i) => 'https://example.com/$userId/img$i.jpg');
+  }
 }
 
 class FakeImagePickerService implements ImagePickerService {
@@ -206,4 +230,8 @@ class FakeImagePickerService implements ImagePickerService {
 
   @override
   Future<PickedImage?> pickImage() async => result;
+
+  @override
+  Future<List<PickedImage>> pickMultipleImages() async =>
+      result != null ? [result!] : [];
 }

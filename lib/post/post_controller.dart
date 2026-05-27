@@ -259,7 +259,7 @@ class PostController extends Notifier<PostState> {
     final trimmed = caption.trim();
     if (state.pendingImages.isEmpty) {
       state = state.copyWith(
-        errorMessage: 'Please choose at least one image.',
+        errorMessage: 'Please choose an image for your post.',
       );
       return;
     }
