@@ -20,8 +20,8 @@ class PostModel {
       userId: map['user_id'] as String,
       content: map['content'] as String,
       imageUrl: map['image_url'] as String?,
-      createdAt: DateTime.parse(map['created_at'] as String),
-      updatedAt: DateTime.parse(map['updated_at'] as String),
+      createdAt: _parseDate(map['created_at']),
+      updatedAt: _parseDate(map['updated_at']),
       likeCount: _readCount(map['like_count']),
       commentCount: _readCount(map['comment_count']),
       authorUsername: author?['username'] as String?,
@@ -35,6 +35,14 @@ class PostModel {
     if (value is num) return value.toInt();
     if (value is String) return int.tryParse(value) ?? 0;
     return 0;
+  }
+
+  static DateTime _parseDate(Object? raw) {
+    if (raw is String && raw.isNotEmpty) {
+      final parsed = DateTime.tryParse(raw);
+      if (parsed != null) return parsed;
+    }
+    return DateTime.now();
   }
 
   final String id;

@@ -17,11 +17,19 @@ class CommentModel {
       postId: map['post_id'] as String,
       userId: map['user_id'] as String,
       body: map['body'] as String,
-      createdAt: DateTime.parse(map['created_at'] as String),
+      createdAt: _parseDate(map['created_at']),
       authorUsername: author?['username'] as String?,
       authorDisplayName: author?['display_name'] as String?,
       authorAvatarUrl: author?['avatar_url'] as String?,
     );
+  }
+
+  static DateTime _parseDate(Object? raw) {
+    if (raw is String && raw.isNotEmpty) {
+      final parsed = DateTime.tryParse(raw);
+      if (parsed != null) return parsed;
+    }
+    return DateTime.now();
   }
 
   final String id;
