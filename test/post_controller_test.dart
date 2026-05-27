@@ -210,6 +210,10 @@ class FakePostRepository implements PostRepository {
   }
 
   @override
+  Future<List<PostModel>> getPostsByIds(List<String> postIds) async =>
+      _posts.where((p) => postIds.contains(p.id)).toList();
+
+  @override
   Future<String> uploadPostImage(
     String userId,
     Uint8List bytes,

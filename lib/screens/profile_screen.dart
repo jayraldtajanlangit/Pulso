@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../post/post_model.dart';
 import '../providers/auth_providers.dart';
+import '../providers/bookmark_providers.dart';
 import '../providers/follow_providers.dart';
 import '../providers/post_providers.dart';
 import '../providers/profile_providers.dart';
@@ -238,12 +239,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                                 ),
                               ),
                       ),
-                      const Center(
-                        child: Text(
-                          'No saved posts',
-                          style: TextStyle(color: Color(0xFF9CA3AF)),
-                        ),
-                      ),
+                      widget.isOwnProfile
+                          ? _SavedPostsTab(userId: widget.userId)
+                          : const Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.lock_outline,
+                                    size: 48,
+                                    color: Color(0xFFD1D5DB),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Saved posts are private',
+                                    style: TextStyle(
+                                      color: Color(0xFF9CA3AF),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                     ],
                   ),
                 ),
@@ -333,6 +350,65 @@ class _EmptyPosts extends StatelessWidget {
         'No posts yet',
         style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 16),
       ),
+    );
+  }
+}
+
+class _SavedPostsTab extends ConsumerWidget {
+  const _SavedPostsTab({required this.userId});
+
+  final String userId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final saved = ref.watch(savedPostsProvider(userId));
+    return saved.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(
+        child: Text(
+          'Failed to load saved posts',
+          style: TextStyle(color: Colors.grey[500]),
+        ),
+      ),
+      data: (posts) => posts.isEmpty
+          ? const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.bookmark_border,
+                    size: 56,
+                    color: Color(0xFFD1D5DB),
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    'No saved posts yet',
+                    style: TextStyle(
+                      color: Color(0xFF9CA3AF),
+                      fontSize: 16,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Tap the bookmark icon on any post to save it.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Color(0xFFD1D5DB),
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : _PostsGrid(
+              posts: posts,
+              onPostTap: (post) => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PostDetailScreen(post: post),
+                ),
+              ),
+            ),
     );
   }
 }

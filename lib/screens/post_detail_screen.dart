@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../post/post_model.dart';
 import '../providers/auth_providers.dart';
+import '../providers/bookmark_providers.dart';
 import '../providers/like_providers.dart';
 import '../providers/profile_providers.dart';
 import '../widgets/comment_input.dart';
@@ -32,6 +33,10 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
         postId: widget.post.id,
         currentUserId: userId,
       );
+      ref.read(bookmarkControllerProvider.notifier).loadForPosts(
+        postIds: [widget.post.id],
+        userId: userId,
+      );
     });
   }
 
@@ -39,6 +44,11 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   Widget build(BuildContext context) {
     final currentProfile =
         ref.watch(profileControllerProvider.select((s) => s.profile));
+    final userId = ref.watch(authControllerProvider).session?.userId;
+    final isBookmarked = ref.watch(
+      bookmarkControllerProvider
+          .select((s) => s.isBookmarked(widget.post.id)),
+    );
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -61,6 +71,15 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                 children: [
                   PostCard(
                     post: widget.post,
+                    isBookmarked: isBookmarked,
+                    onBookmark: userId == null
+                        ? null
+                        : () => ref
+                            .read(bookmarkControllerProvider.notifier)
+                            .toggle(
+                              postId: widget.post.id,
+                              userId: userId,
+                            ),
                     onDeleted: () => Navigator.of(context).pop(),
                   ),
                   const Divider(height: 1, thickness: 0.5),

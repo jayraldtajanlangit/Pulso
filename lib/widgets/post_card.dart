@@ -24,6 +24,7 @@ class PostCard extends ConsumerWidget {
     this.onBookmark,
     this.isBookmarked = false,
     this.onDeleted,
+    this.onHide,
   });
 
   final PostModel post;
@@ -34,6 +35,7 @@ class PostCard extends ConsumerWidget {
   final VoidCallback? onBookmark;
   final bool isBookmarked;
   final VoidCallback? onDeleted;
+  final VoidCallback? onHide;
 
   String get _displayUsername {
     final username = post.authorUsername;
@@ -101,6 +103,27 @@ class PostCard extends ConsumerWidget {
       ),
     );
     controller.dispose();
+  }
+
+  Future<void> _showReportSheet(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => _ReportSheet(
+        onSubmit: (_) {
+          Navigator.of(ctx).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Report submitted. Thanks for your feedback.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
@@ -199,7 +222,43 @@ class PostCard extends ConsumerWidget {
                   ],
                 )
               else
-                const Icon(Icons.more_horiz, size: 20),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_horiz, size: 20),
+                  onSelected: (value) {
+                    if (value == 'report') _showReportSheet(context);
+                    if (value == 'hide') {
+                      onHide?.call();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Post hidden'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(
+                      value: 'report',
+                      child: Row(
+                        children: [
+                          Icon(Icons.flag_outlined, size: 18),
+                          SizedBox(width: 10),
+                          Text('Report'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'hide',
+                      child: Row(
+                        children: [
+                          Icon(Icons.do_not_disturb_alt_outlined, size: 18),
+                          SizedBox(width: 10),
+                          Text('Not interested'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),
@@ -433,6 +492,72 @@ class _CaptionText extends ConsumerWidget {
             TextSpan(text: caption),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ─── Report sheet ────────────────────────────────────────────────────────────
+
+class _ReportSheet extends StatefulWidget {
+  const _ReportSheet({required this.onSubmit});
+
+  final void Function(String reason) onSubmit;
+
+  @override
+  State<_ReportSheet> createState() => _ReportSheetState();
+}
+
+class _ReportSheetState extends State<_ReportSheet> {
+  String? _selected;
+
+  static const _reasons = [
+    'Spam or misleading',
+    'Nudity or sexual content',
+    'Hate speech or discrimination',
+    'Violence or dangerous content',
+    'Harassment or bullying',
+    'Misinformation',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Report Post',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Why are you reporting this post?',
+            style: TextStyle(color: Color(0xFF6B7280), fontSize: 13),
+          ),
+          const SizedBox(height: 8),
+          ..._reasons.map(
+            (r) => ListTile(
+              leading: Radio<String>(
+                value: r,
+                groupValue: _selected,
+                onChanged: (v) => setState(() => _selected = v),
+              ),
+              title: Text(r, style: const TextStyle(fontSize: 14)),
+              onTap: () => setState(() => _selected = r),
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
+          const SizedBox(height: 12),
+          FilledButton(
+            onPressed:
+                _selected == null ? null : () => widget.onSubmit(_selected!),
+            child: const Text('Submit Report'),
+          ),
+        ],
       ),
     );
   }

@@ -30,6 +30,8 @@ abstract class PostRepository {
     String mimeType,
   );
 
+  Future<List<PostModel>> getPostsByIds(List<String> postIds);
+
   Future<List<String>> uploadPostImages(
     String userId,
     List<({Uint8List bytes, String mimeType})> images,
@@ -163,6 +165,21 @@ class SupabasePostRepository implements PostRepository {
   @override
   Future<void> deletePost(String postId) async {
     await _client.from('posts').delete().eq('id', postId);
+  }
+
+  @override
+  Future<List<PostModel>> getPostsByIds(List<String> postIds) async {
+    if (postIds.isEmpty) return [];
+    final response = await _client
+        .from('posts')
+        .select(_selectWithAuthor)
+        .inFilter('id', postIds);
+    final posts = (response as List)
+        .map((e) => PostModel.fromMap(e as Map<String, dynamic>))
+        .toList();
+    final order = {for (var i = 0; i < postIds.length; i++) postIds[i]: i};
+    posts.sort((a, b) => (order[a.id] ?? 0).compareTo(order[b.id] ?? 0));
+    return posts;
   }
 
   @override
