@@ -37,8 +37,13 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentProfile =
-        ref.watch(profileControllerProvider.select((s) => s.profile));
+    final currentUserId =
+        ref.watch(authControllerProvider.select((s) => s.session?.userId));
+    final currentProfile = currentUserId == null
+        ? null
+        : ref.watch(
+            profileControllerProvider(currentUserId).select((s) => s.profile),
+          );
 
     return Scaffold(
       backgroundColor: Colors.white,

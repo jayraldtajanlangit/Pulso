@@ -36,7 +36,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     Future.microtask(() {
-      ref.read(profileControllerProvider.notifier).loadProfile(widget.userId);
       ref.read(followControllerProvider.notifier).loadStats(widget.userId);
 
       final currentUserId = ref.read(authControllerProvider).session?.userId;
@@ -57,7 +56,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   @override
   Widget build(BuildContext context) {
-    final profileState = ref.watch(profileControllerProvider);
+    final profileState = ref.watch(profileControllerProvider(widget.userId));
     final profilePosts = ref.watch(profilePostsProvider(widget.userId));
     final stats = ref.watch(
       followControllerProvider.select((s) => s.statsFor(widget.userId)),
