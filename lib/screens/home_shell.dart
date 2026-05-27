@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/auth_providers.dart';
-import 'activity_screen.dart';
+import 'inbox_screen.dart';
 import 'explore_screen.dart';
 import 'feed_screen.dart';
 import 'post_creation_screen.dart';
@@ -45,7 +45,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         children: [
           const FeedScreen(),
           const ExploreScreen(),
-          const ActivityScreen(),
+          const InboxScreen(),
           ProfileScreen(userId: userId, isOwnProfile: true),
         ],
       ),
@@ -67,7 +67,7 @@ class _BottomNavBar extends StatelessWidget {
     _NavItem(Icons.home_outlined, Icons.home, 'Feed'),
     _NavItem(Icons.local_fire_department_outlined, Icons.local_fire_department, 'Explore'),
     _NavItem(Icons.add_box_outlined, Icons.add_box, 'Post'),
-    _NavItem(Icons.notifications_outlined, Icons.notifications, 'Activity'),
+    _NavItem(Icons.send_outlined, Icons.send, 'Messages'),
     _NavItem(Icons.person_outline, Icons.person, 'Profile'),
   ];
 

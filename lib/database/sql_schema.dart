@@ -230,3 +230,79 @@ CREATE POLICY "stories_images_insert_own"
 CREATE POLICY "music_files_select_all"
   ON storage.objects FOR SELECT USING (bucket_id = 'music');
 ''';
+
+const String conversationsTableSql = '''
+CREATE TABLE IF NOT EXISTS conversations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  last_message_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS conversation_participants (
+  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  PRIMARY KEY (conversation_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  sender_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  body TEXT,
+  shared_post_id UUID REFERENCES posts(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CHECK (body IS NOT NULL OR shared_post_id IS NOT NULL)
+);
+
+ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE conversation_participants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "conversations_select_participant"
+  ON conversations FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM conversation_participants
+      WHERE conversation_id = conversations.id
+        AND user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "conversations_insert_authenticated"
+  ON conversations FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+CREATE POLICY "conversations_update_participant"
+  ON conversations FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM conversation_participants
+      WHERE conversation_id = conversations.id
+        AND user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "participants_select_own"
+  ON conversation_participants FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "participants_insert_authenticated"
+  ON conversation_participants FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+CREATE POLICY "messages_select_participant"
+  ON messages FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM conversation_participants
+      WHERE conversation_id = messages.conversation_id
+        AND user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "messages_insert_participant"
+  ON messages FOR INSERT WITH CHECK (
+    auth.uid() = sender_id AND EXISTS (
+      SELECT 1 FROM conversation_participants
+      WHERE conversation_id = messages.conversation_id
+        AND user_id = auth.uid()
+    )
+  );
+
+ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+ALTER PUBLICATION supabase_realtime ADD TABLE conversations;
+''';
