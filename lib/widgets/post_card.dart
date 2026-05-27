@@ -9,9 +9,12 @@ import '../post/post_model.dart';
 import '../providers/auth_providers.dart';
 import '../providers/comment_providers.dart';
 import '../providers/like_providers.dart';
+import '../providers/message_providers.dart';
 import '../providers/post_providers.dart';
+import '../screens/conversation_screen.dart';
 import 'like_button.dart';
 import 'profile_avatar.dart';
+import 'user_picker_modal.dart';
 
 class PostCard extends ConsumerWidget {
   const PostCard({
@@ -128,6 +131,41 @@ class PostCard extends ConsumerWidget {
     }
   }
 
+  Future<void> _onSendTap(BuildContext context, WidgetRef ref) async {
+    final currentUserId = ref.read(authControllerProvider).session?.userId;
+    if (currentUserId == null) return;
+
+    final recipient = await showUserPickerModal(context);
+    if (recipient == null || !context.mounted) return;
+
+    final conversationId = await ref
+        .read(messageControllerProvider.notifier)
+        .findOrCreateConversation(
+          currentUserId: currentUserId,
+          otherUserId: recipient.id,
+        );
+
+    await ref.read(messageControllerProvider.notifier).sendMessage(
+          conversationId: conversationId,
+          senderId: currentUserId,
+          recipientId: recipient.id,
+          sharedPostId: post.id,
+        );
+
+    if (!context.mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ConversationScreen(
+          conversationId: conversationId,
+          otherUserId: recipient.id,
+          otherUsername: recipient.username ?? recipient.displayName ?? '?',
+          otherAvatarUrl: recipient.avatarUrl,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUserId =
@@ -203,26 +241,26 @@ class PostCard extends ConsumerWidget {
             ],
           ),
         ),
-        // Image with double-tap to like
-        if (post.imageUrl.isNotEmpty)
+        // Image carousel with double-tap to like
+        if (post.imageUrls.isNotEmpty)
           _DoubleTapLikeWrapper(
             postId: post.id,
             onTap: onTap,
-            child: _ImageCarousel(images: [post.imageUrl]),
+            child: _ImageCarousel(images: post.imageUrls),
           ),
         // Actions row
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Row(
             children: [
-              LikeButton(postId: post.id),
+              LikeButton(postId: post.id, postOwnerId: post.userId),
               IconButton(
                 icon: const Icon(Icons.chat_bubble_outline),
                 onPressed: onComment,
               ),
               IconButton(
                 icon: const Icon(Icons.send_outlined),
-                onPressed: () {},
+                onPressed: () => _onSendTap(context, ref),
               ),
               const Spacer(),
               IconButton(
@@ -453,6 +491,8 @@ class _ImageCarouselState extends State<_ImageCarousel> {
   int _current = 0;
   late final PageController _pageController;
 
+  // Aspect ratio is resolved once from the first image and fixed for the
+  // entire carousel so the layout never shifts when swiping.
   late final Future<double> _ratioFuture = _resolveRatio(widget.images.first);
 
   @override

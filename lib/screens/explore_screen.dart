@@ -15,15 +15,6 @@ class ExploreScreen extends ConsumerStatefulWidget {
 
 class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   final _searchController = TextEditingController();
-  String _query = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _searchController.addListener(() {
-      setState(() => _query = _searchController.text.trim().toLowerCase());
-    });
-  }
 
   @override
   void dispose() {
@@ -34,17 +25,6 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(postControllerProvider);
-
-    final posts = _query.isEmpty
-        ? state.posts
-        : state.posts.where((p) {
-            final caption = p.caption.toLowerCase();
-            final username = (p.authorUsername ?? '').toLowerCase();
-            final display = (p.authorDisplayName ?? '').toLowerCase();
-            return caption.contains(_query) ||
-                username.contains(_query) ||
-                display.contains(_query);
-          }).toList();
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -88,7 +68,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           Expanded(
             child: state.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : posts.isEmpty
+                : state.posts.isEmpty
                     ? const _EmptyExplore()
                     : GridView.builder(
                         padding: EdgeInsets.zero,
@@ -98,9 +78,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                           crossAxisSpacing: 2,
                           mainAxisSpacing: 2,
                         ),
-                        itemCount: posts.length,
+                        itemCount: state.posts.length,
                         itemBuilder: (context, i) {
-                          final post = posts[i];
+                          final post = state.posts[i];
                           return _GridItem(
                             post: post,
                             onTap: () => Navigator.push(
@@ -136,9 +116,9 @@ class _GridItem extends StatelessWidget {
             CachedNetworkImage(
               imageUrl: post.imageUrl,
               fit: BoxFit.cover,
-              placeholder: (_, _) =>
+              placeholder: (_, __) =>
                   Container(color: const Color(0xFFE5E7EB)),
-              errorWidget: (_, _, _) =>
+              errorWidget: (_, __, ___) =>
                   Container(color: const Color(0xFFE5E7EB)),
             )
           else

@@ -4,10 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../post/post_model.dart';
 import '../providers/auth_providers.dart';
 import '../providers/comment_providers.dart';
+import '../providers/follow_providers.dart';
 import '../providers/like_providers.dart';
+import '../providers/notification_providers.dart';
 import '../providers/post_providers.dart';
 import '../widgets/post_card.dart';
+import '../widgets/stories_row.dart';
+import 'notifications_screen.dart';
 import 'post_detail_screen.dart';
+import 'profile_screen.dart';
 
 class FeedScreen extends ConsumerStatefulWidget {
   const FeedScreen({super.key});
@@ -16,23 +21,37 @@ class FeedScreen extends ConsumerStatefulWidget {
   ConsumerState<FeedScreen> createState() => _FeedScreenState();
 }
 
-class _FeedScreenState extends ConsumerState<FeedScreen> {
+class _FeedScreenState extends ConsumerState<FeedScreen>
+    with SingleTickerProviderStateMixin {
   bool _didInit = false;
   String? _lastHydratedFingerprint;
   final _scrollController = ScrollController();
+  late final TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_onTabChanged);
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) => _initialLoad());
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_onTabChanged);
+    _tabController.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  bool get _isFollowingTab => _tabController.index == 1;
+
+  void _onTabChanged() {
+    if (_tabController.indexIsChanging) return;
+    _lastHydratedFingerprint = null;
+    _refresh();
   }
 
   Future<void> _initialLoad() async {
@@ -41,39 +60,55 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final userId = ref.read(authControllerProvider).session?.userId;
     if (userId == null) return;
 
-    // Subscribe to realtime channel — guarded because Supabase may not be
-    // initialized in widget tests.
     try {
-      ref
-          .read(likeControllerProvider.notifier)
-          .subscribe(currentUserId: userId);
-    } catch (_) {
-      // Realtime is best-effort; ignore failures here.
-    }
+      ref.read(likeControllerProvider.notifier).subscribe(currentUserId: userId);
+    } catch (_) {}
 
-    // ALWAYS attempt the feed load. loadFeed catches its own exceptions and
-    // surfaces them via state.errorMessage, which the UI now renders.
-    await ref.read(postControllerProvider.notifier).loadFeed();
+    await Future.wait([
+      ref.read(postControllerProvider.notifier).loadFeed(),
+      ref.read(followControllerProvider.notifier).loadFollowingIds(userId),
+    ]);
+
+    try {
+      ref.read(notificationControllerProvider.notifier).load(userId);
+    } catch (_) {}
   }
 
   Future<void> _refresh() async {
+    final userId = ref.read(authControllerProvider).session?.userId;
+    if (userId == null) return;
     try {
-      await ref.read(postControllerProvider.notifier).loadFeed();
-    } catch (_) {
-      // Ignore — refresh is best-effort.
-    }
+      if (_isFollowingTab) {
+        final followingIds = ref
+            .read(followControllerProvider)
+            .followingByCurrentUser
+            .toList();
+        await ref
+            .read(postControllerProvider.notifier)
+            .loadFollowingFeed(followingIds: followingIds);
+      } else {
+        await ref.read(postControllerProvider.notifier).loadFeed();
+      }
+    } catch (_) {}
   }
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
     final position = _scrollController.position;
-    // Trigger loadMore when within 400px of the bottom.
     if (position.pixels >= position.maxScrollExtent - 400) {
       try {
-        ref.read(postControllerProvider.notifier).loadMoreFeed();
-      } catch (_) {
-        // Ignore — pagination is best-effort.
-      }
+        if (_isFollowingTab) {
+          final followingIds = ref
+              .read(followControllerProvider)
+              .followingByCurrentUser
+              .toList();
+          ref
+              .read(postControllerProvider.notifier)
+              .loadMoreFollowingFeed(followingIds: followingIds);
+        } else {
+          ref.read(postControllerProvider.notifier).loadMoreFeed();
+        }
+      } catch (_) {}
     }
   }
 
@@ -122,24 +157,78 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none),
-            onPressed: () {},
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_none),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const NotificationsScreen(),
+                  ),
+                ),
+              ),
+              Consumer(
+                builder: (context, ref, _) {
+                  final unread = ref.watch(
+                    notificationControllerProvider
+                        .select((s) => s.unreadCount),
+                  );
+                  if (unread == 0) return const SizedBox.shrink();
+                  return Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      width: 16,
+                      height: 16,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          unread > 9 ? '9+' : '$unread',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          labelStyle: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.w400,
+            fontSize: 14,
+          ),
+          indicatorColor: Theme.of(context).colorScheme.primary,
+          labelColor: Theme.of(context).colorScheme.primary,
+          unselectedLabelColor: const Color(0xFF9CA3AF),
+          tabs: const [
+            Tab(text: 'For You'),
+            Tab(text: 'Following'),
+          ],
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: CustomScrollView(
           controller: _scrollController,
           slivers: [
-            const SliverToBoxAdapter(child: _StoriesRow()),
+            const SliverToBoxAdapter(child: StoriesRow()),
             const SliverToBoxAdapter(
-              child: Divider(
-                height: 1,
-                thickness: 0.5,
-                color: Color(0xFFE5E7EB),
-              ),
+              child: Divider(height: 1, thickness: 0.5, color: Color(0xFFE5E7EB)),
             ),
             if (state.isLoading && state.posts.isEmpty)
               const SliverFillRemaining(
@@ -153,7 +242,11 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                 ),
               )
             else if (state.posts.isEmpty)
-              const SliverFillRemaining(child: _EmptyFeed())
+              SliverFillRemaining(
+                child: _isFollowingTab
+                    ? const _EmptyFollowingFeed()
+                    : const _EmptyFeed(),
+              )
             else ...[
               SliverList(
                 delegate: SliverChildBuilderDelegate(
@@ -173,6 +266,20 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (_) => PostDetailScreen(post: post),
+                            ),
+                          ),
+                          onAvatarTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  ProfileScreen(userId: post.userId),
+                            ),
+                          ),
+                          onUsernameTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  ProfileScreen(userId: post.userId),
                             ),
                           ),
                         ),
@@ -196,86 +303,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
             ],
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _StoriesRow extends StatelessWidget {
-  const _StoriesRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 96,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        children: const [
-          _StoryItem(label: 'Your story', isAddStory: true),
-        ],
-      ),
-    );
-  }
-}
-
-class _StoryItem extends StatelessWidget {
-  const _StoryItem({required this.label, this.isAddStory = false});
-
-  final String label;
-  final bool isAddStory;
-
-  @override
-  Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
-
-    return Padding(
-      padding: const EdgeInsets.only(right: 16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            children: [
-              Container(
-                width: 58,
-                height: 58,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: const Color(0xFFD1D5DB),
-                    width: 1.5,
-                  ),
-                ),
-                child: const ClipOval(
-                  child: Icon(
-                    Icons.add,
-                    color: Color(0xFF9CA3AF),
-                    size: 28,
-                  ),
-                ),
-              ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  width: 20,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    color: primary,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 1.5),
-                  ),
-                  child: const Icon(Icons.add, color: Colors.white, size: 12),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 11, color: Color(0xFF374151)),
-          ),
-        ],
       ),
     );
   }
@@ -387,6 +414,41 @@ class _EmptyFeed extends StatelessWidget {
           SizedBox(height: 8),
           Text(
             'Create your first post or pull down to refresh.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 13),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyFollowingFeed extends StatelessWidget {
+  const _EmptyFollowingFeed();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.people_outline,
+            size: 64,
+            color: Color(0xFFD1D5DB),
+          ),
+          SizedBox(height: 16),
+          Text(
+            'No posts from people you follow',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 18,
+              color: Color(0xFF374151),
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Follow people to see their posts here.',
             textAlign: TextAlign.center,
             style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 13),
           ),

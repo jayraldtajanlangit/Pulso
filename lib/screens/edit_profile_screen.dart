@@ -23,7 +23,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    // Profile auto-loads via the family provider's build() method.
+    Future.microtask(
+      () => ref
+          .read(profileControllerProvider.notifier)
+          .loadProfile(widget.userId),
+    );
   }
 
   @override
