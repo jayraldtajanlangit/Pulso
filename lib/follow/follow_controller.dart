@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/follow_providers.dart';
+import '../providers/notification_providers.dart';
 import 'follow_repository.dart';
 
 class FollowStats {
@@ -168,6 +169,15 @@ class FollowController extends Notifier<FollowState> {
           targetUserId: targetUserId,
         );
         await loadStats(targetUserId);
+      }
+      if (nowFollowing) {
+        try {
+          await ref.read(notificationRepositoryProvider).insertNotification(
+            recipientId: targetUserId,
+            actorId: currentUserId,
+            type: 'follow',
+          );
+        } catch (_) {}
       }
     } catch (e) {
       // Revert.
