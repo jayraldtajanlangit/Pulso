@@ -11,7 +11,7 @@ void main() {
       final result = await repo.toggleLike(postId: 'p1', userId: 'u1');
 
       expect(result, isTrue);
-      expect(await repo.getLikeCount('p1'), 1);
+      expect(await repo.likeCount('p1'), 1);
       expect(
         await repo.isLikedByUser(postId: 'p1', userId: 'u1'),
         isTrue,
@@ -24,30 +24,30 @@ void main() {
       final result = await repo.toggleLike(postId: 'p1', userId: 'u1');
 
       expect(result, isFalse);
-      expect(await repo.getLikeCount('p1'), 0);
+      expect(await repo.likeCount('p1'), 0);
       expect(
         await repo.isLikedByUser(postId: 'p1', userId: 'u1'),
         isFalse,
       );
     });
 
-    test('getLikeCount returns an integer (count of distinct likes)',
+    test('likeCount returns an integer (count of distinct likes)',
         () async {
       final repo = FakeLikeRepository();
       await repo.toggleLike(postId: 'p1', userId: 'u1');
       await repo.toggleLike(postId: 'p1', userId: 'u2');
       await repo.toggleLike(postId: 'p1', userId: 'u3');
 
-      final count = await repo.getLikeCount('p1');
+      final count = await repo.likeCount('p1');
       expect(count, isA<int>());
       expect(count, 3);
     });
 
-    test('getLikeCountsForPosts returns 0 for posts with no likes', () async {
+    test('likeCountsForPosts returns 0 for posts with no likes', () async {
       final repo = FakeLikeRepository();
       await repo.toggleLike(postId: 'p1', userId: 'u1');
 
-      final counts = await repo.getLikeCountsForPosts(['p1', 'p2', 'p3']);
+      final counts = await repo.likeCountsForPosts(['p1', 'p2', 'p3']);
       expect(counts['p1'], 1);
       expect(counts['p2'], 0);
       expect(counts['p3'], 0);
@@ -166,12 +166,12 @@ class FakeLikeRepository implements LikeRepository {
   }
 
   @override
-  Future<int> getLikeCount(String postId) async {
+  Future<int> likeCount(String postId) async {
     return _likes[postId]?.length ?? 0;
   }
 
   @override
-  Future<Map<String, int>> getLikeCountsForPosts(List<String> postIds) async {
+  Future<Map<String, int>> likeCountsForPosts(List<String> postIds) async {
     return {for (final id in postIds) id: _likes[id]?.length ?? 0};
   }
 

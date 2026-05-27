@@ -90,11 +90,11 @@ class _FakeLikeRepo implements LikeRepository {
       _likes[postId]?.contains(userId) ?? false;
 
   @override
-  Future<int> getLikeCount(String postId) async =>
+  Future<int> likeCount(String postId) async =>
       _likes[postId]?.length ?? 0;
 
   @override
-  Future<Map<String, int>> getLikeCountsForPosts(List<String> postIds) async =>
+  Future<Map<String, int>> likeCountsForPosts(List<String> postIds) async =>
       {for (final id in postIds) id: _likes[id]?.length ?? 0};
 
   @override

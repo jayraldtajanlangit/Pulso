@@ -9,7 +9,7 @@ abstract class PostRepository {
   Future<List<PostModel>> getPosts(String userId);
 
   /// Fetch the global feed (all posts, reverse-chronological).
-  Future<List<PostModel>> getFeed({int limit = 20, int offset = 0});
+  Future<List<PostModel>> fetchFeed({int limit = 20, int offset = 0});
 
   Future<PostModel> createPost(PostModel post);
 
@@ -43,7 +43,7 @@ class SupabasePostRepository implements PostRepository {
   }
 
   @override
-  Future<List<PostModel>> getFeed({int limit = 20, int offset = 0}) async {
+  Future<List<PostModel>> fetchFeed({int limit = 20, int offset = 0}) async {
     final response = await _client
         .from('posts')
         .select(_selectWithAuthor)

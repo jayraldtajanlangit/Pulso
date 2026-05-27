@@ -98,7 +98,7 @@ class PostController extends Notifier<PostState> {
       hasMore: true,
     );
     try {
-      final posts = await _repository.getFeed(limit: limit, offset: 0);
+      final posts = await _repository.fetchFeed(limit: limit, offset: 0);
       state = state.copyWith(
         isLoading: false,
         posts: posts,
@@ -115,7 +115,7 @@ class PostController extends Notifier<PostState> {
 
     state = state.copyWith(isLoadingMore: true, clearError: true);
     try {
-      final more = await _repository.getFeed(
+      final more = await _repository.fetchFeed(
         limit: limit,
         offset: state.posts.length,
       );
