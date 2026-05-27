@@ -30,7 +30,7 @@ void main() {
       expect(state.postCreated, isFalse);
     });
 
-    test('rejects empty content without calling repository', () async {
+    test('rejects createPost when no image has been picked', () async {
       final repo = FakePostRepository();
       final container = ProviderContainer.test(
         overrides: [
@@ -44,42 +44,17 @@ void main() {
 
       await container.read(postControllerProvider.notifier).createPost(
         userId: 'user-1',
-        content: '   ',
+        caption: 'no image',
       );
 
       expect(repo.createPostCalled, isFalse);
       expect(
         container.read(postControllerProvider).errorMessage,
-        'Post content cannot be empty.',
+        'Please choose an image for your post.',
       );
     });
 
-    test('createPost without image creates post and sets postCreated', () async {
-      final repo = FakePostRepository();
-      final container = ProviderContainer.test(
-        overrides: [
-          postRepositoryProvider.overrideWithValue(repo),
-          imagePickerServiceProvider.overrideWithValue(
-            FakeImagePickerService(),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      await container.read(postControllerProvider.notifier).createPost(
-        userId: 'user-1',
-        content: 'Hello world',
-      );
-
-      final state = container.read(postControllerProvider);
-      expect(state.isCreating, isFalse);
-      expect(state.postCreated, isTrue);
-      expect(state.posts.length, 1);
-      expect(state.posts.first.content, 'Hello world');
-      expect(state.posts.first.imageUrl, isNull);
-    });
-
-    test('createPost uploads pending image before creating post', () async {
+    test('createPost uploads pending image and creates the post', () async {
       final repo = FakePostRepository();
       final picker = FakeImagePickerService(
         result: (bytes: Uint8List.fromList([1, 2, 3]), mimeType: 'image/jpeg'),
@@ -92,24 +67,48 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      // Pick an image first.
       await container.read(postControllerProvider.notifier).pickImage();
       expect(
         container.read(postControllerProvider).pendingImageBytes,
         isNotNull,
       );
 
-      // Create post – should upload image and attach URL.
       await container.read(postControllerProvider.notifier).createPost(
         userId: 'user-1',
-        content: 'Post with image',
+        caption: 'Post with image',
       );
 
       final state = container.read(postControllerProvider);
       expect(state.postCreated, isTrue);
-      expect(state.posts.first.imageUrl, isNotNull);
+      expect(state.posts.first.caption, 'Post with image');
+      expect(state.posts.first.imageUrl, isNotEmpty);
       expect(state.pendingImageBytes, isNull); // cleared after creation
       expect(repo.uploadPostImageCalled, isTrue);
+    });
+
+    test('createPost allows an empty caption when an image is present',
+        () async {
+      final repo = FakePostRepository();
+      final picker = FakeImagePickerService(
+        result: (bytes: Uint8List.fromList([4, 5, 6]), mimeType: 'image/jpeg'),
+      );
+      final container = ProviderContainer.test(
+        overrides: [
+          postRepositoryProvider.overrideWithValue(repo),
+          imagePickerServiceProvider.overrideWithValue(picker),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await container.read(postControllerProvider.notifier).pickImage();
+      await container.read(postControllerProvider.notifier).createPost(
+        userId: 'user-1',
+        caption: '   ',
+      );
+
+      final state = container.read(postControllerProvider);
+      expect(state.postCreated, isTrue);
+      expect(state.posts.first.caption, '');
     });
 
     test('loadPosts fetches posts for user', () async {
@@ -118,7 +117,8 @@ void main() {
           PostModel(
             id: 'p1',
             userId: 'user-1',
-            content: 'Seeded post',
+            caption: 'Seeded post',
+            imageUrl: 'https://example.com/p1.jpg',
             createdAt: DateTime(2024),
             updatedAt: DateTime(2024),
           ),
@@ -141,7 +141,7 @@ void main() {
       final state = container.read(postControllerProvider);
       expect(state.isLoading, isFalse);
       expect(state.posts.length, 1);
-      expect(state.posts.first.content, 'Seeded post');
+      expect(state.posts.first.caption, 'Seeded post');
     });
 
     test('clearPendingImage removes pending bytes', () async {
@@ -200,7 +200,7 @@ class FakePostRepository implements PostRepository {
     final created = PostModel(
       id: 'new-id',
       userId: post.userId,
-      content: post.content,
+      caption: post.caption,
       imageUrl: post.imageUrl,
       createdAt: DateTime(2024),
       updatedAt: DateTime(2024),

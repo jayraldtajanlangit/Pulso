@@ -2,8 +2,8 @@ class PostModel {
   const PostModel({
     required this.id,
     required this.userId,
-    required this.content,
-    this.imageUrl,
+    required this.caption,
+    required this.imageUrl,
     required this.createdAt,
     required this.updatedAt,
     this.likeCount = 0,
@@ -18,8 +18,8 @@ class PostModel {
     return PostModel(
       id: map['id'] as String,
       userId: map['user_id'] as String,
-      content: map['content'] as String,
-      imageUrl: map['image_url'] as String?,
+      caption: (map['caption'] as String?) ?? '',
+      imageUrl: map['image_url'] as String,
       createdAt: _parseDate(map['created_at']),
       updatedAt: _parseDate(map['updated_at']),
       likeCount: _readCount(map['like_count']),
@@ -47,8 +47,10 @@ class PostModel {
 
   final String id;
   final String userId;
-  final String content;
-  final String? imageUrl;
+  final String caption;
+
+  /// Required by the live schema (posts.image_url is NOT NULL).
+  final String imageUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
   final int likeCount;
@@ -61,8 +63,8 @@ class PostModel {
 
   Map<String, dynamic> toInsertMap() => {
     'user_id': userId,
-    'content': content,
-    if (imageUrl != null) 'image_url': imageUrl,
+    'caption': caption,
+    'image_url': imageUrl,
   };
 
   PostModel copyWith({
@@ -75,7 +77,7 @@ class PostModel {
     return PostModel(
       id: id,
       userId: userId,
-      content: content,
+      caption: caption,
       imageUrl: imageUrl,
       createdAt: createdAt,
       updatedAt: updatedAt,

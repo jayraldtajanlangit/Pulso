@@ -112,9 +112,9 @@ class _GridItem extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          if (post.imageUrl != null)
+          if (post.imageUrl.isNotEmpty)
             CachedNetworkImage(
-              imageUrl: post.imageUrl!,
+              imageUrl: post.imageUrl,
               fit: BoxFit.cover,
               placeholder: (_, __) =>
                   Container(color: const Color(0xFFE5E7EB)),

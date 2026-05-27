@@ -85,7 +85,7 @@ class _PostCreationScreenState extends ConsumerState<PostCreationScreen> {
                         .read(postControllerProvider.notifier)
                         .createPost(
                           userId: widget.userId,
-                          content: _contentController.text,
+                          caption: _contentController.text,
                         ),
               child: state.isCreating
                   ? const SizedBox.square(
