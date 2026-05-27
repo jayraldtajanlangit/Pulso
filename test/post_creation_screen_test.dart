@@ -146,6 +146,12 @@ class FakePostRepository implements PostRepository {
   Future<List<PostModel>> getPosts(String userId) async => [];
 
   @override
+  Future<List<PostModel>> getFeed({int limit = 20, int offset = 0}) async => [];
+
+  @override
+  Future<void> deletePost(String postId) async {}
+
+  @override
   Future<PostModel> createPost(PostModel post) async {
     createPostCalled = true;
     return PostModel(

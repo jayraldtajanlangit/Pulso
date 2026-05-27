@@ -7,10 +7,14 @@ import '../providers/services_providers.dart';
 import 'post_model.dart';
 import 'post_repository.dart';
 
+const int kFeedPageSize = 10;
+
 class PostState {
   const PostState({
     required this.isLoading,
+    required this.isLoadingMore,
     required this.isCreating,
+    required this.hasMore,
     required this.posts,
     this.pendingImageBytes,
     this.errorMessage,
@@ -19,14 +23,18 @@ class PostState {
 
   const PostState.initial()
     : isLoading = false,
+      isLoadingMore = false,
       isCreating = false,
+      hasMore = true,
       posts = const [],
       pendingImageBytes = null,
       errorMessage = null,
       postCreated = false;
 
   final bool isLoading;
+  final bool isLoadingMore;
   final bool isCreating;
+  final bool hasMore;
   final List<PostModel> posts;
   final Uint8List? pendingImageBytes;
   final String? errorMessage;
@@ -36,7 +44,9 @@ class PostState {
 
   PostState copyWith({
     bool? isLoading,
+    bool? isLoadingMore,
     bool? isCreating,
+    bool? hasMore,
     List<PostModel>? posts,
     Uint8List? pendingImageBytes,
     String? errorMessage,
@@ -46,7 +56,9 @@ class PostState {
   }) {
     return PostState(
       isLoading: isLoading ?? this.isLoading,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       isCreating: isCreating ?? this.isCreating,
+      hasMore: hasMore ?? this.hasMore,
       posts: posts ?? this.posts,
       pendingImageBytes:
           clearPendingImage ? null : pendingImageBytes ?? this.pendingImageBytes,
@@ -62,13 +74,64 @@ class PostController extends Notifier<PostState> {
 
   PostRepository get _repository => ref.read(postRepositoryProvider);
 
+  /// Load posts for a single user (used on profile screens).
   Future<void> loadPosts(String userId) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final posts = await _repository.getPosts(userId);
-      state = state.copyWith(isLoading: false, posts: posts);
+      state = state.copyWith(
+        isLoading: false,
+        posts: posts,
+        hasMore: false,
+      );
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
+    }
+  }
+
+  /// Reset and load the first page of the global feed.
+  Future<void> loadFeed({int limit = kFeedPageSize}) async {
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      posts: const [],
+      hasMore: true,
+    );
+    try {
+      final posts = await _repository.getFeed(limit: limit, offset: 0);
+      state = state.copyWith(
+        isLoading: false,
+        posts: posts,
+        hasMore: posts.length >= limit,
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+    }
+  }
+
+  /// Append the next page of the feed (infinite scroll).
+  Future<void> loadMoreFeed({int limit = kFeedPageSize}) async {
+    if (state.isLoadingMore || !state.hasMore || state.isLoading) return;
+
+    state = state.copyWith(isLoadingMore: true, clearError: true);
+    try {
+      final more = await _repository.getFeed(
+        limit: limit,
+        offset: state.posts.length,
+      );
+      // De-dupe in case the realtime layer already inserted some.
+      final existingIds = state.posts.map((p) => p.id).toSet();
+      final additions = more.where((p) => !existingIds.contains(p.id)).toList();
+      state = state.copyWith(
+        isLoadingMore: false,
+        posts: [...state.posts, ...additions],
+        hasMore: more.length >= limit,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoadingMore: false,
+        errorMessage: e.toString(),
+      );
     }
   }
 

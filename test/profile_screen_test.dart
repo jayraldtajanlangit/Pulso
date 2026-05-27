@@ -7,7 +7,7 @@ import 'package:pulso/profile/profile_model.dart';
 import 'package:pulso/profile/profile_repository.dart';
 import 'package:pulso/providers/profile_providers.dart';
 import 'package:pulso/providers/services_providers.dart';
-import 'package:pulso/screens/profile_screen.dart';
+import 'package:pulso/screens/edit_profile_screen.dart';
 import 'package:pulso/services/image_picker_service.dart';
 
 void main() {
@@ -31,7 +31,7 @@ void main() {
 
     return UncontrolledProviderScope(
       container: container,
-      child: MaterialApp(home: ProfileScreen(userId: userId)),
+      child: MaterialApp(home: EditProfileScreen(userId: userId)),
     );
   }
 
@@ -102,7 +102,7 @@ void main() {
     await tester.pumpWidget(buildScreen(userId: 'user-1', repo: repo));
     await tester.pumpAndSettle();
 
-    // Loading stops and error shows (no form, error text visible).
+    // Loading stops and error shows.
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.textContaining('network error'), findsOneWidget);
   });

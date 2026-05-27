@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../post/post_model.dart';
 import '../providers/auth_providers.dart';
+import '../providers/follow_providers.dart';
 import '../providers/post_providers.dart';
 import '../providers/profile_providers.dart';
+import '../widgets/follow_button.dart';
+import '../widgets/profile_avatar.dart';
 import 'edit_profile_screen.dart';
 import 'post_detail_screen.dart';
 
@@ -36,6 +39,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           .read(profileControllerProvider.notifier)
           .loadProfile(widget.userId);
       ref.read(postControllerProvider.notifier).loadPosts(widget.userId);
+      ref.read(followControllerProvider.notifier).loadStats(widget.userId);
+
+      // Only load follow-state when looking at someone else's profile.
+      final currentUserId =
+          ref.read(authControllerProvider).session?.userId;
+      if (currentUserId != null && currentUserId != widget.userId) {
+        ref.read(followControllerProvider.notifier).loadFollowState(
+          currentUserId: currentUserId,
+          targetUserId: widget.userId,
+        );
+      }
     });
   }
 
@@ -49,6 +63,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileControllerProvider);
     final postState = ref.watch(postControllerProvider);
+    final stats = ref.watch(
+      followControllerProvider.select((s) => s.statsFor(widget.userId)),
+    );
     final profile = profileState.profile;
 
     final displayName = profile?.displayName ??
@@ -88,26 +105,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       // Avatar + stats
                       Row(
                         children: [
-                          CircleAvatar(
+                          ProfileAvatar(
+                            avatarUrl: profile?.avatarUrl,
+                            displayName: displayName,
                             radius: 44,
                             backgroundColor: const Color(0xFFE0E7FF),
-                            backgroundImage: profile?.avatarUrl != null
-                                ? CachedNetworkImageProvider(
-                                    profile!.avatarUrl!,
-                                  )
-                                : null,
-                            child: profile?.avatarUrl == null
-                                ? Text(
-                                    displayName.isNotEmpty
-                                        ? displayName[0].toUpperCase()
-                                        : '?',
-                                    style: const TextStyle(
-                                      fontSize: 32,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF6B7280),
-                                    ),
-                                  )
-                                : null,
                           ),
                           const SizedBox(width: 24),
                           Expanded(
@@ -118,12 +120,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                                   count: postState.posts.length,
                                   label: 'Posts',
                                 ),
-                                const _StatColumn(
-                                  count: 0,
+                                _StatColumn(
+                                  count: stats.followers,
                                   label: 'Followers',
                                 ),
-                                const _StatColumn(
-                                  count: 0,
+                                _StatColumn(
+                                  count: stats.following,
                                   label: 'Following',
                                 ),
                               ],
@@ -178,17 +180,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       else
                         SizedBox(
                           width: double.infinity,
-                          child: FilledButton(
-                            onPressed: () {
-                              // Backend: follow/unfollow
-                            },
-                            style: FilledButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: const Text('Follow'),
-                          ),
+                          child: FollowButton(targetUserId: widget.userId),
                         ),
                       const SizedBox(height: 8),
                     ],
@@ -287,9 +279,9 @@ class _PostsGrid extends StatelessWidget {
               ? CachedNetworkImage(
                   imageUrl: post.imageUrl!,
                   fit: BoxFit.cover,
-                  placeholder: (_, __) =>
+                  placeholder: (_, _) =>
                       Container(color: const Color(0xFFE5E7EB)),
-                  errorWidget: (_, __, ___) =>
+                  errorWidget: (_, _, _) =>
                       Container(color: const Color(0xFFE5E7EB)),
                 )
               : Container(

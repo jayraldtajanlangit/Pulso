@@ -186,6 +186,15 @@ class FakePostRepository implements PostRepository {
       _posts.where((p) => p.userId == userId).toList();
 
   @override
+  Future<List<PostModel>> getFeed({int limit = 20, int offset = 0}) async =>
+      List<PostModel>.from(_posts);
+
+  @override
+  Future<void> deletePost(String postId) async {
+    _posts.removeWhere((p) => p.id == postId);
+  }
+
+  @override
   Future<PostModel> createPost(PostModel post) async {
     createPostCalled = true;
     final created = PostModel(

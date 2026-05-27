@@ -1,38 +1,44 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../post/post_model.dart';
+import '../providers/comment_providers.dart';
+import 'like_button.dart';
+import 'profile_avatar.dart';
 
-class PostCard extends StatelessWidget {
+/// Feed-style card for a single post.
+///
+/// Like and comment counts are read live from their controllers when the
+/// parent has populated them (see `LikeController.loadForPosts` and
+/// `CommentController.loadCountsForPosts`).
+class PostCard extends ConsumerWidget {
   const PostCard({
     super.key,
     required this.post,
-    this.username,
-    this.avatarUrl,
-    this.likeCount = 0,
-    this.commentCount = 0,
-    this.isLiked = false,
-    this.isBookmarked = false,
     this.onTap,
-    this.onLike,
     this.onComment,
+    this.onAvatarTap,
+    this.onUsernameTap,
     this.onBookmark,
+    this.isBookmarked = false,
   });
 
   final PostModel post;
-  final String? username;
-  final String? avatarUrl;
-  final int likeCount;
-  final int commentCount;
-  final bool isLiked;
-  final bool isBookmarked;
   final VoidCallback? onTap;
-  final VoidCallback? onLike;
   final VoidCallback? onComment;
+  final VoidCallback? onAvatarTap;
+  final VoidCallback? onUsernameTap;
   final VoidCallback? onBookmark;
+  final bool isBookmarked;
 
-  String get _displayUsername =>
-      username ?? post.userId.substring(0, post.userId.length.clamp(0, 8));
+  String get _displayUsername {
+    final username = post.authorUsername;
+    if (username != null && username.isNotEmpty) return username;
+    final display = post.authorDisplayName;
+    if (display != null && display.isNotEmpty) return display;
+    return post.userId.substring(0, post.userId.length.clamp(0, 8));
+  }
 
   String get _formattedDate {
     const months = [
@@ -43,7 +49,12 @@ class PostCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final liveCommentCount = ref.watch(
+      commentControllerProvider.select((s) => s.counts[post.id]),
+    );
+    final commentCount = liveCommentCount ?? post.commentCount;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -52,14 +63,24 @@ class PostCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
             children: [
-              _AvatarWidget(avatarUrl: avatarUrl, username: _displayUsername),
+              GestureDetector(
+                onTap: onAvatarTap,
+                child: ProfileAvatar(
+                  avatarUrl: post.authorAvatarUrl,
+                  displayName: _displayUsername,
+                  radius: 18,
+                ),
+              ),
               const SizedBox(width: 10),
               Expanded(
-                child: Text(
-                  _displayUsername,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
+                child: GestureDetector(
+                  onTap: onUsernameTap,
+                  child: Text(
+                    _displayUsername,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ),
@@ -70,17 +91,16 @@ class PostCard extends StatelessWidget {
         // Image
         if (post.imageUrl != null)
           GestureDetector(
-            onDoubleTap: onLike,
             onTap: onTap,
             child: CachedNetworkImage(
               imageUrl: post.imageUrl!,
               width: double.infinity,
               fit: BoxFit.cover,
-              placeholder: (_, __) => Container(
+              placeholder: (_, _) => Container(
                 height: 300,
                 color: const Color(0xFFE5E7EB),
               ),
-              errorWidget: (_, __, ___) => Container(
+              errorWidget: (_, _, _) => Container(
                 height: 300,
                 color: const Color(0xFFE5E7EB),
                 child: const Icon(
@@ -96,13 +116,7 @@ class PostCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Row(
             children: [
-              IconButton(
-                icon: Icon(
-                  isLiked ? Icons.favorite : Icons.favorite_border,
-                  color: isLiked ? Colors.red : null,
-                ),
-                onPressed: onLike,
-              ),
+              LikeButton(postId: post.id),
               IconButton(
                 icon: const Icon(Icons.chat_bubble_outline),
                 onPressed: onComment,
@@ -121,13 +135,13 @@ class PostCard extends StatelessWidget {
             ],
           ),
         ),
-        // Like count
+        // Counts
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Row(
             children: [
-              Text(
-                '$likeCount',
+              LikeCountText(
+                postId: post.id,
                 style: const TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
@@ -144,7 +158,11 @@ class PostCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 4),
-              const Icon(Icons.chat_bubble_outline, size: 13, color: Colors.black87),
+              const Icon(
+                Icons.chat_bubble_outline,
+                size: 13,
+                color: Colors.black87,
+              ),
             ],
           ),
         ),
@@ -178,33 +196,6 @@ class PostCard extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _AvatarWidget extends StatelessWidget {
-  const _AvatarWidget({required this.avatarUrl, required this.username});
-
-  final String? avatarUrl;
-  final String username;
-
-  @override
-  Widget build(BuildContext context) {
-    return CircleAvatar(
-      radius: 18,
-      backgroundImage:
-          avatarUrl != null ? CachedNetworkImageProvider(avatarUrl!) : null,
-      backgroundColor: const Color(0xFFE5E7EB),
-      child: avatarUrl == null
-          ? Text(
-              username.isNotEmpty ? username[0].toUpperCase() : '?',
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-                color: Color(0xFF6B7280),
-              ),
-            )
-          : null,
     );
   }
 }

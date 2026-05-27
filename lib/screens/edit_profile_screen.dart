@@ -1,9 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../profile/profile_model.dart';
 import '../providers/profile_providers.dart';
+import '../widgets/profile_avatar.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key, required this.userId});
@@ -16,6 +16,7 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _usernameController = TextEditingController();
+  final _displayNameController = TextEditingController();
   final _bioController = TextEditingController();
   bool _fieldsFilled = false;
 
@@ -32,17 +33,28 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   @override
   void dispose() {
     _usernameController.dispose();
+    _displayNameController.dispose();
     _bioController.dispose();
     super.dispose();
   }
 
   void _fillFields(ProfileModel? profile) {
     if (!_fieldsFilled && profile != null) {
-      _usernameController.text =
-          profile.username ?? profile.displayName ?? '';
+      _usernameController.text = profile.username ?? '';
+      _displayNameController.text = profile.displayName ?? '';
       _bioController.text = profile.bio ?? '';
       _fieldsFilled = true;
     }
+  }
+
+  Future<void> _save() async {
+    await ref.read(profileControllerProvider.notifier).updateProfile(
+      userId: widget.userId,
+      username: _usernameController.text.trim(),
+      displayName: _displayNameController.text.trim(),
+      bio: _bioController.text.trim(),
+    );
+    if (mounted) Navigator.pop(context);
   }
 
   @override
@@ -53,6 +65,21 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       profileControllerProvider.select((s) => s.profile),
       (_, profile) => _fillFields(profile),
     );
+
+    if (state.isLoading && state.profile == null && state.errorMessage == null) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          title: const Text(
+            'Edit Profile',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -67,18 +94,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: FilledButton(
-              onPressed: state.isLoading
-                  ? null
-                  : () async {
-                      await ref
-                          .read(profileControllerProvider.notifier)
-                          .updateProfile(
-                            userId: widget.userId,
-                            username: _usernameController.text.trim(),
-                            bio: _bioController.text.trim(),
-                          );
-                      if (context.mounted) Navigator.pop(context);
-                    },
+              key: const Key('saveProfileButton'),
+              onPressed: state.isLoading ? null : _save,
               style: FilledButton.styleFrom(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
@@ -103,35 +120,35 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (state.errorMessage != null) ...[
+              Text(
+                state.errorMessage!,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontSize: 13,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+            ],
             // Avatar
             Center(
               child: GestureDetector(
+                key: const Key('uploadAvatarButton'),
                 onTap: () => ref
                     .read(profileControllerProvider.notifier)
                     .pickAndUploadAvatar(widget.userId),
                 child: Stack(
                   alignment: Alignment.bottomRight,
                   children: [
-                    CircleAvatar(
+                    ProfileAvatar(
+                      key: const Key('profileAvatar'),
+                      avatarUrl: state.profile?.avatarUrl,
+                      displayName: _displayNameController.text.isNotEmpty
+                          ? _displayNameController.text
+                          : _usernameController.text,
                       radius: 50,
                       backgroundColor: const Color(0xFFE0E7FF),
-                      backgroundImage: state.profile?.avatarUrl != null
-                          ? CachedNetworkImageProvider(
-                              state.profile!.avatarUrl!,
-                            )
-                          : null,
-                      child: state.profile?.avatarUrl == null
-                          ? Text(
-                              _usernameController.text.isNotEmpty
-                                  ? _usernameController.text[0].toUpperCase()
-                                  : '?',
-                              style: const TextStyle(
-                                fontSize: 36,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF6B7280),
-                              ),
-                            )
-                          : null,
                     ),
                     if (state.isUploading)
                       const Positioned.fill(
@@ -164,6 +181,28 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
             ),
             const SizedBox(height: 32),
+            // Display name
+            const Text(
+              'Display name',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              key: const Key('displayNameField'),
+              controller: _displayNameController,
+              decoration: InputDecoration(
+                hintText: 'Your name',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
             // Username
             const Text(
               'Username',
@@ -208,17 +247,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
               maxLines: 3,
             ),
-            if (state.errorMessage != null) ...[
-              const SizedBox(height: 16),
-              Text(
-                state.errorMessage!,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                  fontSize: 13,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
           ],
         ),
       ),

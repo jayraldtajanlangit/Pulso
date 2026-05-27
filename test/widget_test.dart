@@ -7,6 +7,7 @@ import 'package:pulso/providers/auth_providers.dart';
 
 import 'package:pulso/main.dart';
 import 'package:pulso/screens/auth_screen.dart';
+import 'package:pulso/screens/sign_up_screen.dart';
 
 void main() {
   testWidgets('shows setup guidance when Supabase is not configured', (
@@ -59,7 +60,7 @@ void main() {
     expect(repo.signInPassword, 'password123');
   });
 
-  testWidgets('calls sign up with entered credentials', (
+  testWidgets('navigates from sign-in to sign-up screen', (
     WidgetTester tester,
   ) async {
     final repo = FakeAuthRepository();
@@ -72,13 +73,83 @@ void main() {
       ),
     );
 
-    await tester.enterText(find.byKey(AuthKeys.emailField), 'new@example.com');
-    await tester.enterText(find.byKey(AuthKeys.passwordField), 'password123');
-    await tester.tap(find.text('Create account'));
+    await tester.tap(find.byKey(AuthKeys.goToSignUpButton));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Create your account'), findsOneWidget);
+    expect(find.byKey(SignUpKeys.emailField), findsOneWidget);
+    expect(find.byKey(SignUpKeys.passwordField), findsOneWidget);
+    expect(find.byKey(SignUpKeys.confirmPasswordField), findsOneWidget);
+  });
+
+  testWidgets('sign-up screen calls signUp with valid credentials', (
+    WidgetTester tester,
+  ) async {
+    final repo = FakeAuthRepository();
+    addTearDown(repo.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [authRepositoryProvider.overrideWithValue(repo)],
+        child: const MyApp(),
+      ),
+    );
+
+    await tester.tap(find.byKey(AuthKeys.goToSignUpButton));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(SignUpKeys.emailField),
+      'new@example.com',
+    );
+    await tester.enterText(
+      find.byKey(SignUpKeys.passwordField),
+      'password123',
+    );
+    await tester.enterText(
+      find.byKey(SignUpKeys.confirmPasswordField),
+      'password123',
+    );
+    await tester.tap(find.byKey(SignUpKeys.submitButton));
     await tester.pump();
 
     expect(repo.signUpEmail, 'new@example.com');
     expect(repo.signUpPassword, 'password123');
+  });
+
+  testWidgets('sign-up screen rejects mismatched passwords', (
+    WidgetTester tester,
+  ) async {
+    final repo = FakeAuthRepository();
+    addTearDown(repo.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [authRepositoryProvider.overrideWithValue(repo)],
+        child: const MyApp(),
+      ),
+    );
+
+    await tester.tap(find.byKey(AuthKeys.goToSignUpButton));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(SignUpKeys.emailField),
+      'new@example.com',
+    );
+    await tester.enterText(
+      find.byKey(SignUpKeys.passwordField),
+      'password123',
+    );
+    await tester.enterText(
+      find.byKey(SignUpKeys.confirmPasswordField),
+      'different',
+    );
+    await tester.tap(find.byKey(SignUpKeys.submitButton));
+    await tester.pump();
+
+    expect(repo.signUpEmail, isNull);
+    expect(find.text('Passwords do not match.'), findsOneWidget);
   });
 }
 

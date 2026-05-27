@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/auth_providers.dart';
+import 'sign_up_screen.dart';
 
 class AuthKeys {
   static const emailField = Key('auth_email_field');
   static const passwordField = Key('auth_password_field');
+  static const signInButton = Key('auth_sign_in_button');
+  static const goToSignUpButton = Key('auth_go_to_sign_up_button');
 }
 
 class AuthScreen extends ConsumerStatefulWidget {
@@ -18,6 +21,7 @@ class AuthScreen extends ConsumerStatefulWidget {
 class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -30,6 +34,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(authControllerProvider);
     final controller = ref.read(authControllerProvider.notifier);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       body: SafeArea(
@@ -49,7 +54,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   Text(
                     'Sign in to sync your workspace.',
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      color: colorScheme.onSurfaceVariant,
                       fontSize: 16,
                     ),
                   ),
@@ -59,14 +64,35 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(labelText: 'Email'),
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      prefixIcon: Icon(Icons.mail_outline),
+                    ),
                   ),
                   const SizedBox(height: 14),
                   TextField(
                     key: AuthKeys.passwordField,
                     controller: _passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(labelText: 'Password'),
+                    obscureText: _obscurePassword,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => controller.signIn(
+                      email: _emailController.text,
+                      password: _passwordController.text,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                        ),
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
+                      ),
+                    ),
                   ),
                   if (state.errorMessage != null) ...[
                     const SizedBox(height: 14),
@@ -78,23 +104,36 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   ],
                   const SizedBox(height: 22),
                   FilledButton(
+                    key: AuthKeys.signInButton,
                     onPressed: state.isLoading
                         ? null
                         : () => controller.signIn(
                               email: _emailController.text,
                               password: _passwordController.text,
                             ),
-                    child: Text(state.isLoading ? 'Working...' : 'Sign in'),
+                    child: Text(state.isLoading ? 'Signing in...' : 'Sign in'),
                   ),
-                  const SizedBox(height: 8),
-                  OutlinedButton(
-                    onPressed: state.isLoading
-                        ? null
-                        : () => controller.signUp(
-                              email: _emailController.text,
-                              password: _passwordController.text,
-                            ),
-                    child: const Text('Create account'),
+                  const SizedBox(height: 24),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        "Don't have an account? ",
+                        style: TextStyle(color: colorScheme.onSurfaceVariant),
+                      ),
+                      TextButton(
+                        key: AuthKeys.goToSignUpButton,
+                        onPressed: state.isLoading
+                            ? null
+                            : () => Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const SignUpScreen(),
+                                  ),
+                                ),
+                        child: const Text('Create account'),
+                      ),
+                    ],
                   ),
                 ],
               ),

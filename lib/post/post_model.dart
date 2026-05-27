@@ -6,16 +6,36 @@ class PostModel {
     this.imageUrl,
     required this.createdAt,
     required this.updatedAt,
+    this.likeCount = 0,
+    this.commentCount = 0,
+    this.authorUsername,
+    this.authorDisplayName,
+    this.authorAvatarUrl,
   });
 
-  factory PostModel.fromMap(Map<String, dynamic> map) => PostModel(
-    id: map['id'] as String,
-    userId: map['user_id'] as String,
-    content: map['content'] as String,
-    imageUrl: map['image_url'] as String?,
-    createdAt: DateTime.parse(map['created_at'] as String),
-    updatedAt: DateTime.parse(map['updated_at'] as String),
-  );
+  factory PostModel.fromMap(Map<String, dynamic> map) {
+    final author = map['profiles'] as Map<String, dynamic>?;
+    return PostModel(
+      id: map['id'] as String,
+      userId: map['user_id'] as String,
+      content: map['content'] as String,
+      imageUrl: map['image_url'] as String?,
+      createdAt: DateTime.parse(map['created_at'] as String),
+      updatedAt: DateTime.parse(map['updated_at'] as String),
+      likeCount: _readCount(map['like_count']),
+      commentCount: _readCount(map['comment_count']),
+      authorUsername: author?['username'] as String?,
+      authorDisplayName: author?['display_name'] as String?,
+      authorAvatarUrl: author?['avatar_url'] as String?,
+    );
+  }
+
+  static int _readCount(Object? value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
 
   final String id;
   final String userId;
@@ -23,10 +43,39 @@ class PostModel {
   final String? imageUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final int likeCount;
+  final int commentCount;
+
+  /// Joined from profiles when fetched via PostRepository.getFeed().
+  final String? authorUsername;
+  final String? authorDisplayName;
+  final String? authorAvatarUrl;
 
   Map<String, dynamic> toInsertMap() => {
     'user_id': userId,
     'content': content,
     if (imageUrl != null) 'image_url': imageUrl,
   };
+
+  PostModel copyWith({
+    int? likeCount,
+    int? commentCount,
+    String? authorUsername,
+    String? authorDisplayName,
+    String? authorAvatarUrl,
+  }) {
+    return PostModel(
+      id: id,
+      userId: userId,
+      content: content,
+      imageUrl: imageUrl,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      likeCount: likeCount ?? this.likeCount,
+      commentCount: commentCount ?? this.commentCount,
+      authorUsername: authorUsername ?? this.authorUsername,
+      authorDisplayName: authorDisplayName ?? this.authorDisplayName,
+      authorAvatarUrl: authorAvatarUrl ?? this.authorAvatarUrl,
+    );
+  }
 }
