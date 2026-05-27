@@ -6,8 +6,10 @@ import '../providers/auth_providers.dart';
 import '../providers/comment_providers.dart';
 import '../providers/follow_providers.dart';
 import '../providers/like_providers.dart';
+import '../providers/notification_providers.dart';
 import '../providers/post_providers.dart';
 import '../widgets/post_card.dart';
+import 'notifications_screen.dart';
 import 'post_detail_screen.dart';
 import 'profile_screen.dart';
 
@@ -65,6 +67,10 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
       ref.read(postControllerProvider.notifier).loadFeed(),
       ref.read(followControllerProvider.notifier).loadFollowingIds(userId),
     ]);
+
+    try {
+      ref.read(notificationControllerProvider.notifier).load(userId);
+    } catch (_) {}
   }
 
   Future<void> _refresh() async {
@@ -150,9 +156,49 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none),
-            onPressed: () {},
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_none),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const NotificationsScreen(),
+                  ),
+                ),
+              ),
+              Consumer(
+                builder: (context, ref, _) {
+                  final unread = ref.watch(
+                    notificationControllerProvider
+                        .select((s) => s.unreadCount),
+                  );
+                  if (unread == 0) return const SizedBox.shrink();
+                  return Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      width: 16,
+                      height: 16,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          unread > 9 ? '9+' : '$unread',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ],
         bottom: TabBar(
@@ -179,14 +225,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
         child: CustomScrollView(
           controller: _scrollController,
           slivers: [
-            const SliverToBoxAdapter(child: _StoriesRow()),
-            const SliverToBoxAdapter(
-              child: Divider(
-                height: 1,
-                thickness: 0.5,
-                color: Color(0xFFE5E7EB),
-              ),
-            ),
             if (state.isLoading && state.posts.isEmpty)
               const SliverFillRemaining(
                 child: Center(child: CircularProgressIndicator()),
@@ -260,86 +298,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
             ],
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _StoriesRow extends StatelessWidget {
-  const _StoriesRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 96,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        children: const [
-          _StoryItem(label: 'Your story', isAddStory: true),
-        ],
-      ),
-    );
-  }
-}
-
-class _StoryItem extends StatelessWidget {
-  const _StoryItem({required this.label, this.isAddStory = false});
-
-  final String label;
-  final bool isAddStory;
-
-  @override
-  Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
-
-    return Padding(
-      padding: const EdgeInsets.only(right: 16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            children: [
-              Container(
-                width: 58,
-                height: 58,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: const Color(0xFFD1D5DB),
-                    width: 1.5,
-                  ),
-                ),
-                child: const ClipOval(
-                  child: Icon(
-                    Icons.add,
-                    color: Color(0xFF9CA3AF),
-                    size: 28,
-                  ),
-                ),
-              ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  width: 20,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    color: primary,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 1.5),
-                  ),
-                  child: const Icon(Icons.add, color: Colors.white, size: 12),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 11, color: Color(0xFF374151)),
-          ),
-        ],
       ),
     );
   }
