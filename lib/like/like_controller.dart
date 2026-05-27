@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../providers/like_providers.dart';
+import '../providers/notification_providers.dart';
 import 'like_repository.dart';
 
 class LikeStatus {
@@ -110,6 +111,7 @@ class LikeController extends Notifier<LikeState> {
   Future<void> toggle({
     required String postId,
     required String currentUserId,
+    String? postOwnerId,
   }) async {
     final current = state.statusFor(postId);
     // Optimistic update.
@@ -127,6 +129,16 @@ class LikeController extends Notifier<LikeState> {
       // Reconcile if the optimistic guess was wrong (e.g. duplicate hit).
       if (nowLiked != optimistic.isLiked) {
         await _refreshPost(postId, currentUserId);
+      }
+      if (nowLiked && postOwnerId != null && postOwnerId != currentUserId) {
+        try {
+          await ref.read(notificationRepositoryProvider).insertNotification(
+            recipientId: postOwnerId,
+            actorId: currentUserId,
+            type: 'like',
+            postId: postId,
+          );
+        } catch (_) {}
       }
     } catch (e) {
       // Revert on failure.

@@ -215,14 +215,10 @@ class PostCard extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Row(
             children: [
-              LikeButton(postId: post.id),
+              LikeButton(postId: post.id, postOwnerId: post.userId),
               IconButton(
                 icon: const Icon(Icons.chat_bubble_outline),
                 onPressed: onComment,
-              ),
-              IconButton(
-                icon: const Icon(Icons.send_outlined),
-                onPressed: () {},
               ),
               const Spacer(),
               IconButton(
