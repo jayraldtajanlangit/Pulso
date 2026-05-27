@@ -15,9 +15,17 @@ class ProfileModel {
     displayName: map['display_name'] as String?,
     bio: map['bio'] as String?,
     avatarUrl: map['avatar_url'] as String?,
-    createdAt: DateTime.parse(map['created_at'] as String),
-    updatedAt: DateTime.parse(map['updated_at'] as String),
+    createdAt: _parseDate(map['created_at']),
+    updatedAt: _parseDate(map['updated_at']),
   );
+
+  static DateTime _parseDate(Object? raw) {
+    if (raw is String && raw.isNotEmpty) {
+      final parsed = DateTime.tryParse(raw);
+      if (parsed != null) return parsed;
+    }
+    return DateTime.now();
+  }
 
   final String id;
   final String? username;

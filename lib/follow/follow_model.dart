@@ -10,8 +10,16 @@ class FollowModel {
     id: map['id'] as String,
     followerId: map['follower_id'] as String,
     followingId: map['following_id'] as String,
-    createdAt: DateTime.parse(map['created_at'] as String),
+    createdAt: _parseDate(map['created_at']),
   );
+
+  static DateTime _parseDate(Object? raw) {
+    if (raw is String && raw.isNotEmpty) {
+      final parsed = DateTime.tryParse(raw);
+      if (parsed != null) return parsed;
+    }
+    return DateTime.now();
+  }
 
   final String id;
   final String followerId;
