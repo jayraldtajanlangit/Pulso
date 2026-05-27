@@ -13,6 +13,7 @@ class LikeButton extends ConsumerWidget {
   const LikeButton({
     super.key,
     required this.postId,
+    this.postOwnerId,
     this.iconSize = 24,
     this.likedColor = Colors.red,
     this.unlikedColor,
@@ -20,6 +21,7 @@ class LikeButton extends ConsumerWidget {
   });
 
   final String postId;
+  final String? postOwnerId;
   final double iconSize;
   final Color likedColor;
   final Color? unlikedColor;
@@ -56,6 +58,7 @@ class LikeButton extends ConsumerWidget {
         ref.read(likeControllerProvider.notifier).toggle(
           postId: postId,
           currentUserId: session.userId,
+          postOwnerId: postOwnerId,
         );
       },
     );

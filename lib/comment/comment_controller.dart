@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../providers/comment_providers.dart';
+import '../providers/notification_providers.dart';
 import 'comment_model.dart';
 import 'comment_repository.dart';
 
@@ -134,6 +135,7 @@ class CommentController extends Notifier<CommentState> {
     required String postId,
     required String userId,
     required String body,
+    String? postOwnerId,
   }) async {
     final trimmed = body.trim();
     if (trimmed.isEmpty) {
@@ -166,6 +168,16 @@ class CommentController extends Notifier<CommentState> {
         thread.copyWith(isSubmitting: false, comments: next),
       );
       _setCount(postId, next.length);
+      if (postOwnerId != null && postOwnerId != userId) {
+        try {
+          await ref.read(notificationRepositoryProvider).insertNotification(
+            recipientId: postOwnerId,
+            actorId: userId,
+            type: 'comment',
+            postId: postId,
+          );
+        } catch (_) {}
+      }
     } catch (e) {
       _setThread(
         postId,
