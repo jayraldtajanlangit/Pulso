@@ -78,7 +78,7 @@ class LikeController extends Notifier<LikeState> {
   }) async {
     if (postIds.isEmpty) return;
     try {
-      final counts = await _repository.getLikeCountsForPosts(postIds);
+      final counts = await _repository.likeCountsForPosts(postIds);
       final liked = await _repository.getLikedPostIdsForUser(
         userId: currentUserId,
         postIds: postIds,
@@ -137,7 +137,7 @@ class LikeController extends Notifier<LikeState> {
 
   Future<void> _refreshPost(String postId, String currentUserId) async {
     try {
-      final count = await _repository.getLikeCount(postId);
+      final count = await _repository.likeCount(postId);
       final isLiked = await _repository.isLikedByUser(
         postId: postId,
         userId: currentUserId,

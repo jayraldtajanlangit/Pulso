@@ -9,9 +9,9 @@ abstract class LikeRepository {
     required String userId,
   });
 
-  Future<int> getLikeCount(String postId);
+  Future<int> likeCount(String postId);
 
-  Future<Map<String, int>> getLikeCountsForPosts(List<String> postIds);
+  Future<Map<String, int>> likeCountsForPosts(List<String> postIds);
 
   Future<Set<String>> getLikedPostIdsForUser({
     required String userId,
@@ -73,7 +73,7 @@ class SupabaseLikeRepository implements LikeRepository {
   }
 
   @override
-  Future<int> getLikeCount(String postId) async {
+  Future<int> likeCount(String postId) async {
     final response = await _client
         .from('likes')
         .select('id')
@@ -83,7 +83,7 @@ class SupabaseLikeRepository implements LikeRepository {
   }
 
   @override
-  Future<Map<String, int>> getLikeCountsForPosts(List<String> postIds) async {
+  Future<Map<String, int>> likeCountsForPosts(List<String> postIds) async {
     if (postIds.isEmpty) return {};
 
     final response = await _client
