@@ -9,6 +9,7 @@ import '../providers/like_providers.dart';
 import '../providers/notification_providers.dart';
 import '../providers/post_providers.dart';
 import '../widgets/post_card.dart';
+import '../widgets/stories_row.dart';
 import 'notifications_screen.dart';
 import 'post_detail_screen.dart';
 import 'profile_screen.dart';
@@ -225,6 +226,10 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
         child: CustomScrollView(
           controller: _scrollController,
           slivers: [
+            const SliverToBoxAdapter(child: StoriesRow()),
+            const SliverToBoxAdapter(
+              child: Divider(height: 1, thickness: 0.5, color: Color(0xFFE5E7EB)),
+            ),
             if (state.isLoading && state.posts.isEmpty)
               const SliverFillRemaining(
                 child: Center(child: CircularProgressIndicator()),
