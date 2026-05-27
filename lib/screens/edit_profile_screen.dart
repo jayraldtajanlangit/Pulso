@@ -44,22 +44,21 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _save() async {
-    await ref
-        .read(profileControllerProvider(widget.userId).notifier)
-        .updateProfile(
-          username: _usernameController.text.trim(),
-          displayName: _displayNameController.text.trim(),
-          bio: _bioController.text.trim(),
-        );
+    await ref.read(profileControllerProvider.notifier).updateProfile(
+      userId: widget.userId,
+      username: _usernameController.text.trim(),
+      displayName: _displayNameController.text.trim(),
+      bio: _bioController.text.trim(),
+    );
     if (mounted) Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(profileControllerProvider(widget.userId));
+    final state = ref.watch(profileControllerProvider);
 
     ref.listen(
-      profileControllerProvider(widget.userId).select((s) => s.profile),
+      profileControllerProvider.select((s) => s.profile),
       (_, profile) => _fillFields(profile),
     );
 
@@ -133,8 +132,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               child: GestureDetector(
                 key: const Key('uploadAvatarButton'),
                 onTap: () => ref
-                    .read(profileControllerProvider(widget.userId).notifier)
-                    .pickAndUploadAvatar(),
+                    .read(profileControllerProvider.notifier)
+                    .pickAndUploadAvatar(widget.userId),
                 child: Stack(
                   alignment: Alignment.bottomRight,
                   children: [

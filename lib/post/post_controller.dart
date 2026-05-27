@@ -135,6 +135,43 @@ class PostController extends Notifier<PostState> {
     }
   }
 
+  Future<void> editPost(String postId, {required String caption}) async {
+    try {
+      await _repository.editPost(postId, caption: caption);
+      state = state.copyWith(
+        posts: state.posts.map((p) {
+          if (p.id != postId) return p;
+          return PostModel(
+            id: p.id,
+            userId: p.userId,
+            caption: caption,
+            imageUrl: p.imageUrl,
+            createdAt: p.createdAt,
+            updatedAt: DateTime.now(),
+            likeCount: p.likeCount,
+            commentCount: p.commentCount,
+            authorUsername: p.authorUsername,
+            authorDisplayName: p.authorDisplayName,
+            authorAvatarUrl: p.authorAvatarUrl,
+          );
+        }).toList(),
+      );
+    } catch (e) {
+      state = state.copyWith(errorMessage: e.toString());
+    }
+  }
+
+  Future<void> deletePost(String postId) async {
+    try {
+      await _repository.deletePost(postId);
+      state = state.copyWith(
+        posts: state.posts.where((p) => p.id != postId).toList(),
+      );
+    } catch (e) {
+      state = state.copyWith(errorMessage: e.toString());
+    }
+  }
+
   Future<void> pickImage() async {
     final picked = await ref.read(imagePickerServiceProvider).pickImage();
     if (picked != null) {

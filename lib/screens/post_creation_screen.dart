@@ -20,7 +20,7 @@ class _PostCreationScreenState extends ConsumerState<PostCreationScreen> {
   void initState() {
     super.initState();
     Future.microtask(
-      () => ref.read(postControllerProvider.notifier).clearPendingImages(),
+      () => ref.read(postControllerProvider.notifier).clearPendingImage(),
     );
   }
 
@@ -38,6 +38,8 @@ class _PostCreationScreenState extends ConsumerState<PostCreationScreen> {
       if (created && mounted) Navigator.of(context).pop();
     });
 
+    final imageBytes = state.pendingImageBytes;
+
     return Scaffold(
       appBar: AppBar(title: const Text('New Post')),
       body: SingleChildScrollView(
@@ -45,15 +47,50 @@ class _PostCreationScreenState extends ConsumerState<PostCreationScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _MultiImagePicker(
-              images: state.pendingImages
-                  .map((img) => img.bytes)
-                  .toList(),
-              onAdd: () =>
-                  ref.read(postControllerProvider.notifier).addImages(),
-              onRemove: (i) =>
-                  ref.read(postControllerProvider.notifier).removeImage(i),
-            ),
+            if (imageBytes == null)
+              OutlinedButton.icon(
+                key: const Key('addImageButton'),
+                onPressed: () =>
+                    ref.read(postControllerProvider.notifier).pickImage(),
+                icon: const Icon(Icons.add_photo_alternate_outlined),
+                label: const Text('Add Photo'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(100),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              )
+            else
+              Stack(
+                key: const Key('postImagePreview'),
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.memory(
+                      imageBytes,
+                      width: double.infinity,
+                      height: 260,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: GestureDetector(
+                      key: const Key('removeImageButton'),
+                      onTap: () => ref
+                          .read(postControllerProvider.notifier)
+                          .clearPendingImage(),
+                      child: const CircleAvatar(
+                        backgroundColor: Colors.black54,
+                        radius: 14,
+                        child: Icon(Icons.close, color: Colors.white, size: 16),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             const SizedBox(height: 20),
             TextField(
               key: const Key('postContentField'),
@@ -96,124 +133,6 @@ class _PostCreationScreenState extends ConsumerState<PostCreationScreen> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _MultiImagePicker extends StatelessWidget {
-  const _MultiImagePicker({
-    required this.images,
-    required this.onAdd,
-    required this.onRemove,
-  });
-
-  final List<dynamic> images; // List<Uint8List>
-  final VoidCallback onAdd;
-  final void Function(int index) onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    if (images.isEmpty) {
-      return OutlinedButton.icon(
-        key: const Key('addImageButton'),
-        onPressed: onAdd,
-        icon: const Icon(Icons.add_photo_alternate_outlined),
-        label: const Text('Add Photos'),
-        style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(100),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          height: 110,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: images.length + 1,
-            separatorBuilder: (context, index) => const SizedBox(width: 8),
-            itemBuilder: (context, i) {
-              if (i == images.length) {
-                return GestureDetector(
-                  onTap: onAdd,
-                  child: Container(
-                    width: 90,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFFD1D5DB)),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.add_photo_alternate_outlined,
-                      color: Color(0xFF9CA3AF),
-                      size: 32,
-                    ),
-                  ),
-                );
-              }
-
-              return Stack(
-                key: i == 0 ? const Key('postImagePreview') : null,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: ColoredBox(
-                      color: Colors.black,
-                      child: Image.memory(
-                        images[i],
-                        width: 90,
-                        height: 110,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: 4,
-                    right: 4,
-                    child: GestureDetector(
-                      key: i == 0 ? const Key('removeImageButton') : null,
-                      onTap: () => onRemove(i),
-                      child: const CircleAvatar(
-                        backgroundColor: Colors.black54,
-                        radius: 12,
-                        child: Icon(Icons.close, color: Colors.white, size: 14),
-                      ),
-                    ),
-                  ),
-                  if (i == 0)
-                    Positioned(
-                      bottom: 4,
-                      left: 4,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black54,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          'Cover',
-                          style: TextStyle(color: Colors.white, fontSize: 10),
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          '${images.length} photo${images.length == 1 ? '' : 's'} selected',
-          style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12),
-        ),
-      ],
     );
   }
 }

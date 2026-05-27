@@ -15,6 +15,10 @@ abstract class PostRepository {
 
   Future<void> deletePost(String postId);
 
+  Future<void> editPost(String postId, {required String caption});
+
+  Future<List<PostModel>> getPostsByIds(List<String> ids);
+
   Future<String> uploadPostImage(
     String userId,
     Uint8List bytes,
@@ -67,6 +71,27 @@ class SupabasePostRepository implements PostRepository {
   @override
   Future<void> deletePost(String postId) async {
     await _client.from('posts').delete().eq('id', postId);
+  }
+
+  @override
+  Future<void> editPost(String postId, {required String caption}) async {
+    await _client
+        .from('posts')
+        .update({'caption': caption})
+        .eq('id', postId);
+  }
+
+  @override
+  Future<List<PostModel>> getPostsByIds(List<String> ids) async {
+    if (ids.isEmpty) return [];
+    final response = await _client
+        .from('posts')
+        .select(_selectWithAuthor)
+        .inFilter('id', ids)
+        .order('created_at', ascending: false);
+    return (response as List)
+        .map((e) => PostModel.fromMap(e as Map<String, dynamic>))
+        .toList();
   }
 
   @override
