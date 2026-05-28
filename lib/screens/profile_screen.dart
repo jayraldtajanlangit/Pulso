@@ -176,9 +176,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       if (widget.isOwnProfile)
                         SizedBox(
                           width: double.infinity,
-                          child: OutlinedButton.icon(
-                            icon: const Icon(Icons.settings, size: 16),
-                            label: const Text('Edit Profile'),
+                          child: OutlinedButton(
                             onPressed: () => Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -192,6 +190,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                               ),
                               padding: const EdgeInsets.symmetric(vertical: 10),
                             ),
+                            child: const Text('Edit Profile'),
                           ),
                         )
                       else

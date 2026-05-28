@@ -6,10 +6,10 @@ import '../providers/auth_providers.dart';
 import '../providers/comment_providers.dart';
 import 'profile_avatar.dart';
 
-/// Renders the comment thread for a post.
-///
-/// On mount, triggers `CommentController.loadComments(postId)` which also
-/// starts the realtime subscription for the thread.
+/// Renders the comment thread for a post, Instagram-style:
+/// - Each comment has a like heart with a count
+/// - "Reply" action below each comment that sets the input's reply target
+/// - "View N replies" expands a nested list under the parent comment
 class CommentList extends ConsumerStatefulWidget {
   const CommentList({
     super.key,
@@ -22,9 +22,6 @@ class CommentList extends ConsumerStatefulWidget {
   });
 
   final String postId;
-
-  /// User id of the post owner — used to decide if a delete button should
-  /// appear on a comment authored by someone else.
   final String postOwnerId;
   final String emptyStateMessage;
   final EdgeInsetsGeometry padding;
@@ -40,9 +37,10 @@ class _CommentListState extends ConsumerState<CommentList> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref
-          .read(commentControllerProvider.notifier)
-          .loadComments(widget.postId);
+      final userId = ref.read(authControllerProvider).session?.userId;
+      final notifier = ref.read(commentControllerProvider.notifier);
+      notifier.setCurrentUser(userId);
+      notifier.loadComments(widget.postId);
     });
   }
 
@@ -80,39 +78,146 @@ class _CommentListState extends ConsumerState<CommentList> {
           (widget.shrinkWrap ? const NeverScrollableScrollPhysics() : null),
       padding: widget.padding,
       itemCount: thread.comments.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const SizedBox(height: 16),
       itemBuilder: (context, i) {
         final comment = thread.comments[i];
+        final replies = thread.repliesByParent[comment.id];
         final canDelete = currentUserId != null &&
             (comment.userId == currentUserId ||
                 widget.postOwnerId == currentUserId);
-        return _CommentTile(
-          comment: comment,
-          canDelete: canDelete,
-          onDelete: () => ref
-              .read(commentControllerProvider.notifier)
-              .deleteComment(postId: widget.postId, commentId: comment.id),
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _CommentTile(
+              comment: comment,
+              postId: widget.postId,
+              canDelete: canDelete,
+              onDelete: () => ref
+                  .read(commentControllerProvider.notifier)
+                  .deleteComment(
+                    postId: widget.postId,
+                    commentId: comment.id,
+                  ),
+            ),
+            if (comment.replyCount > 0)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(42, 6, 0, 0),
+                child: _ToggleRepliesButton(
+                  postId: widget.postId,
+                  parentCommentId: comment.id,
+                  replyCount: comment.replyCount,
+                  isExpanded: replies != null,
+                ),
+              ),
+            if (replies != null && replies.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(42, 8, 0, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final reply in replies) ...[
+                      _CommentTile(
+                        comment: reply,
+                        postId: widget.postId,
+                        canDelete: currentUserId != null &&
+                            (reply.userId == currentUserId ||
+                                widget.postOwnerId == currentUserId),
+                        onDelete: () => ref
+                            .read(commentControllerProvider.notifier)
+                            .deleteComment(
+                              postId: widget.postId,
+                              commentId: reply.id,
+                            ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ],
+                ),
+              ),
+          ],
         );
       },
     );
   }
 }
 
-class _CommentTile extends StatelessWidget {
+class _ToggleRepliesButton extends ConsumerWidget {
+  const _ToggleRepliesButton({
+    required this.postId,
+    required this.parentCommentId,
+    required this.replyCount,
+    required this.isExpanded,
+  });
+
+  final String postId;
+  final String parentCommentId;
+  final int replyCount;
+  final bool isExpanded;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notifier = ref.read(commentControllerProvider.notifier);
+    return GestureDetector(
+      onTap: () {
+        if (isExpanded) {
+          notifier.collapseReplies(
+            postId: postId,
+            parentCommentId: parentCommentId,
+          );
+        } else {
+          notifier.loadReplies(
+            postId: postId,
+            parentCommentId: parentCommentId,
+          );
+        }
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 24,
+              height: 1,
+              color: const Color(0xFFD1D5DB),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              isExpanded
+                  ? 'Hide replies'
+                  : 'View ${replyCount == 1 ? "1 reply" : "$replyCount replies"}',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF6B7280),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CommentTile extends ConsumerWidget {
   const _CommentTile({
     required this.comment,
+    required this.postId,
     required this.canDelete,
     required this.onDelete,
   });
 
   final CommentModel comment;
+  final String postId;
   final bool canDelete;
   final VoidCallback onDelete;
 
   String get _displayName =>
-      comment.authorDisplayName ??
       comment.authorUsername ??
-      comment.userId.substring(0, comment.userId.length.clamp(0, 8));
+      comment.authorDisplayName ??
+      'user_${comment.userId.substring(0, comment.userId.length.clamp(0, 6))}';
 
   String get _relativeTime {
     final diff = DateTime.now().difference(comment.createdAt);
@@ -124,7 +229,11 @@ class _CommentTile extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final primary = Theme.of(context).colorScheme.primary;
+    final currentUserId =
+        ref.watch(authControllerProvider).session?.userId;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -143,6 +252,7 @@ class _CommentTile extends StatelessWidget {
                   style: DefaultTextStyle.of(context).style.copyWith(
                         fontSize: 13,
                         color: Colors.black,
+                        height: 1.35,
                       ),
                   children: [
                     TextSpan(
@@ -153,21 +263,94 @@ class _CommentTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                _relativeTime,
-                style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 11),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Text(
+                    _relativeTime,
+                    style: const TextStyle(
+                      color: Color(0xFF9CA3AF),
+                      fontSize: 11,
+                    ),
+                  ),
+                  if (comment.likeCount > 0) ...[
+                    const SizedBox(width: 12),
+                    Text(
+                      '${comment.likeCount} ${comment.likeCount == 1 ? "like" : "likes"}',
+                      style: const TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: () {
+                      // Set reply target: if this is itself a reply, attach
+                      // to its parent so threads stay flat (Instagram-style).
+                      final targetId =
+                          comment.parentCommentId ?? comment.id;
+                      ref
+                          .read(replyTargetProvider(postId).notifier)
+                          .set(
+                            ReplyTarget(
+                              commentId: targetId,
+                              username: _displayName,
+                            ),
+                          );
+                    },
+                    child: const Text(
+                      'Reply',
+                      style: TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  if (canDelete) ...[
+                    const SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: onDelete,
+                      child: const Text(
+                        'Delete',
+                        style: TextStyle(
+                          color: Color(0xFFEF4444),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ],
           ),
         ),
-        if (canDelete)
-          IconButton(
-            iconSize: 18,
-            visualDensity: VisualDensity.compact,
-            icon: const Icon(Icons.delete_outline, color: Color(0xFF9CA3AF)),
-            onPressed: onDelete,
+        // Heart toggle on the right
+        GestureDetector(
+          onTap: () {
+            if (currentUserId == null) return;
+            ref
+                .read(commentControllerProvider.notifier)
+                .toggleCommentLike(
+                  postId: postId,
+                  commentId: comment.id,
+                  userId: currentUserId,
+                );
+          },
+          child: Padding(
+            padding: const EdgeInsets.only(left: 8, top: 2),
+            child: Icon(
+              comment.isLikedByMe
+                  ? Icons.favorite
+                  : Icons.favorite_border,
+              size: 16,
+              color: comment.isLikedByMe ? primary : const Color(0xFF6B7280),
+            ),
           ),
+        ),
       ],
     );
   }

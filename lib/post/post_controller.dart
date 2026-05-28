@@ -219,6 +219,7 @@ class PostController extends Notifier<PostState> {
       state = state.copyWith(
         posts: state.posts.map((p) => p.id == postId ? updated : p).toList(),
       );
+      _invalidateAuthorPosts(updated.userId);
     } catch (e) {
       state = state.copyWith(errorMessage: e.toString());
     }
@@ -226,10 +227,19 @@ class PostController extends Notifier<PostState> {
 
   Future<void> deletePost(String postId) async {
     try {
+      // ownerId may be null if the post isn't tracked in the controller's
+      // local feed state (e.g. when deleting from a profile grid that loads
+      // posts independently). In that case we skip the targeted invalidation;
+      // callers can invalidate the right family key themselves.
+      final ownerId = state.posts
+          .where((p) => p.id == postId)
+          .map((p) => p.userId)
+          .firstOrNull;
       await _repository.deletePost(postId);
       state = state.copyWith(
         posts: state.posts.where((p) => p.id != postId).toList(),
       );
+      if (ownerId != null) _invalidateAuthorPosts(ownerId);
     } catch (e) {
       state = state.copyWith(errorMessage: e.toString());
     }
@@ -239,6 +249,18 @@ class PostController extends Notifier<PostState> {
     state = state.copyWith(
       posts: state.posts.where((p) => p.id != postId).toList(),
     );
+  }
+
+  /// Force a refresh of the profile grid for [userId] so newly-created,
+  /// edited, or deleted posts appear immediately. `profilePostsProvider`
+  /// is a separate cached family provider, so it doesn't pick up changes
+  /// to `postControllerProvider.posts` automatically.
+  void _invalidateAuthorPosts(String userId) {
+    try {
+      ref.invalidate(profilePostsProvider(userId));
+    } catch (_) {
+      // No-op when Supabase isn't initialized (e.g., unit tests).
+    }
   }
 
   Future<void> pickImage() async {
@@ -290,6 +312,7 @@ class PostController extends Notifier<PostState> {
         clearPendingImages: true,
         postCreated: true,
       );
+      _invalidateAuthorPosts(userId);
     } catch (e) {
       state = state.copyWith(isCreating: false, errorMessage: e.toString());
     }

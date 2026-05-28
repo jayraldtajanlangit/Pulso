@@ -79,8 +79,34 @@ CREATE TABLE IF NOT EXISTS comments (
   post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   body TEXT NOT NULL,
+  parent_comment_id UUID REFERENCES comments(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS comments_parent_idx
+  ON comments(parent_comment_id);
+''';
+
+const String commentLikesTableSql = '''
+CREATE TABLE IF NOT EXISTS comment_likes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  comment_id UUID NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (comment_id, user_id)
+);
+
+ALTER TABLE comment_likes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "comment_likes_select_all"
+  ON comment_likes FOR SELECT USING (true);
+
+CREATE POLICY "comment_likes_insert_own"
+  ON comment_likes FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "comment_likes_delete_own"
+  ON comment_likes FOR DELETE USING (auth.uid() = user_id);
+
+ALTER PUBLICATION supabase_realtime ADD TABLE comment_likes;
 ''';
 
 const String followsTableSql = '''
@@ -235,8 +261,9 @@ CREATE TABLE IF NOT EXISTS notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   recipient_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   actor_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  type TEXT NOT NULL CHECK (type IN ('like', 'comment', 'follow', 'message')),
+  type TEXT NOT NULL CHECK (type IN ('like', 'comment', 'follow', 'story_like')),
   post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
+  story_id UUID REFERENCES stories(id) ON DELETE CASCADE,
   read BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -329,165 +356,26 @@ CREATE POLICY "music_files_select_all"
   ON storage.objects FOR SELECT USING (bucket_id = 'music');
 ''';
 
-const String conversationsTableSql = '''
-CREATE TABLE IF NOT EXISTS conversations (
+const String storyReactionsTableSql = '''
+CREATE TABLE IF NOT EXISTS story_reactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  last_message_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS conversation_participants (
-  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  story_id UUID NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  PRIMARY KEY (conversation_id, user_id)
-);
-
-CREATE TABLE IF NOT EXISTS messages (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-  sender_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  body TEXT,
-  shared_post_id UUID REFERENCES posts(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  CHECK (body IS NOT NULL OR shared_post_id IS NOT NULL)
+  UNIQUE (story_id, user_id)
 );
 
-ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE conversation_participants ENABLE ROW LEVEL SECURITY;
-ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE story_reactions ENABLE ROW LEVEL SECURITY;
 
-CREATE SCHEMA IF NOT EXISTS private;
-REVOKE ALL ON SCHEMA private FROM PUBLIC;
-GRANT USAGE ON SCHEMA private TO authenticated;
+CREATE POLICY "story_reactions_select_all"
+  ON story_reactions FOR SELECT USING (true);
 
-CREATE OR REPLACE FUNCTION private.is_conversation_participant(target_conversation_id UUID)
-RETURNS BOOLEAN
-LANGUAGE SQL
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS \$\$
-  SELECT EXISTS (
-    SELECT 1
-    FROM conversation_participants
-    WHERE conversation_id = target_conversation_id
-      AND user_id = auth.uid()
-  );
-\$\$;
+CREATE POLICY "story_reactions_insert_own"
+  ON story_reactions FOR INSERT WITH CHECK (auth.uid() = user_id);
 
-REVOKE ALL ON FUNCTION private.is_conversation_participant(UUID) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION private.is_conversation_participant(UUID) TO authenticated;
+CREATE POLICY "story_reactions_delete_own"
+  ON story_reactions FOR DELETE USING (auth.uid() = user_id);
 
-DROP POLICY IF EXISTS "conversations_select_participant" ON conversations;
-DROP POLICY IF EXISTS "conversations_update_participant" ON conversations;
-DROP POLICY IF EXISTS "participants_select_own" ON conversation_participants;
-DROP POLICY IF EXISTS "participants_select_conversation_members" ON conversation_participants;
-DROP POLICY IF EXISTS "messages_select_participant" ON messages;
-DROP POLICY IF EXISTS "messages_insert_participant" ON messages;
-
-CREATE POLICY "conversations_select_participant"
-  ON conversations FOR SELECT USING (private.is_conversation_participant(id));
-
-CREATE POLICY "conversations_insert_authenticated"
-  ON conversations FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-
-CREATE POLICY "conversations_update_participant"
-  ON conversations FOR UPDATE USING (private.is_conversation_participant(id));
-
-CREATE POLICY "participants_select_conversation_members"
-  ON conversation_participants FOR SELECT USING (
-    private.is_conversation_participant(conversation_id)
-  );
-
-CREATE POLICY "participants_insert_authenticated"
-  ON conversation_participants FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-
-CREATE POLICY "messages_select_participant"
-  ON messages FOR SELECT USING (
-    private.is_conversation_participant(conversation_id)
-  );
-
-CREATE POLICY "messages_insert_participant"
-  ON messages FOR INSERT WITH CHECK (
-    auth.uid() = sender_id
-    AND private.is_conversation_participant(conversation_id)
-  );
-
-ALTER PUBLICATION supabase_realtime ADD TABLE messages;
-ALTER PUBLICATION supabase_realtime ADD TABLE conversations;
-
--- Atomic "find-or-create conversation, then insert message" RPC.
--- Doing this in a single transaction eliminates the multi-HTTP-request
--- timing issues that caused message inserts to fail RLS validation when the
--- participant rows from a prior request weren't yet visible.
-CREATE OR REPLACE FUNCTION public.send_direct_message(
-  recipient_id UUID,
-  message_body TEXT DEFAULT NULL,
-  shared_post UUID DEFAULT NULL
-)
-RETURNS JSONB
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS \$\$
-DECLARE
-  sender UUID := auth.uid();
-  conv_id UUID;
-  inserted_message JSONB;
-BEGIN
-  IF sender IS NULL THEN
-    RAISE EXCEPTION 'send_direct_message: not authenticated';
-  END IF;
-  IF sender = recipient_id THEN
-    RAISE EXCEPTION 'send_direct_message: cannot message self';
-  END IF;
-  IF message_body IS NULL AND shared_post IS NULL THEN
-    RAISE EXCEPTION 'send_direct_message: body or shared_post required';
-  END IF;
-
-  -- Find a 1:1 conversation already shared by both users.
-  SELECT cp1.conversation_id INTO conv_id
-  FROM conversation_participants cp1
-  INNER JOIN conversation_participants cp2
-    ON cp2.conversation_id = cp1.conversation_id
-  INNER JOIN conversations c
-    ON c.id = cp1.conversation_id
-  WHERE cp1.user_id = sender
-    AND cp2.user_id = recipient_id
-  ORDER BY c.last_message_at DESC NULLS LAST
-  LIMIT 1;
-
-  -- Create the conversation + both participant rows in this same transaction
-  -- if none exists. Subsequent statements see these rows immediately.
-  IF conv_id IS NULL THEN
-    INSERT INTO conversations (last_message_at)
-    VALUES (NOW())
-    RETURNING id INTO conv_id;
-
-    INSERT INTO conversation_participants (conversation_id, user_id)
-    VALUES (conv_id, sender), (conv_id, recipient_id);
-  END IF;
-
-  INSERT INTO messages (conversation_id, sender_id, body, shared_post_id)
-  VALUES (conv_id, sender, message_body, shared_post)
-  RETURNING jsonb_build_object(
-    'id', id,
-    'conversation_id', conversation_id,
-    'sender_id', sender_id,
-    'body', body,
-    'shared_post_id', shared_post_id,
-    'created_at', created_at
-  ) INTO inserted_message;
-
-  UPDATE conversations SET last_message_at = NOW() WHERE id = conv_id;
-
-  RETURN jsonb_build_object(
-    'conversation_id', conv_id,
-    'message', inserted_message
-  );
-END;
-\$\$;
-
-REVOKE ALL ON FUNCTION public.send_direct_message(UUID, TEXT, UUID) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.send_direct_message(UUID, TEXT, UUID) TO authenticated;
+ALTER PUBLICATION supabase_realtime ADD TABLE story_reactions;
 ''';
+

@@ -214,7 +214,24 @@ class _FakeCommentRepository implements CommentRepository {
     required String postId,
     required String userId,
     required String body,
+    String? parentCommentId,
   }) async => throw UnimplementedError();
+
+  @override
+  Future<List<CommentModel>> fetchReplies(String parentCommentId) async =>
+      const [];
+
+  @override
+  Future<List<CommentModel>> hydrateMetadata(
+    List<CommentModel> comments, {
+    required String currentUserId,
+  }) async => comments;
+
+  @override
+  Future<bool> toggleCommentLike({
+    required String commentId,
+    required String userId,
+  }) async => true;
 
   @override
   Future<void> deleteComment(String commentId) async {}
@@ -236,6 +253,12 @@ class _FakeCommentRepository implements CommentRepository {
     required void Function(CommentModel comment) onCommentAdded,
     void Function(String commentId)? onCommentDeleted,
   }) => throw UnimplementedError();
+
+  @override
+  RealtimeChannel subscribeToAllComments({
+    required void Function(String postId) onCommentAdded,
+    required void Function(String postId) onCommentDeleted,
+  }) => throw UnimplementedError();
 }
 
 class _FakeNotificationRepository implements NotificationRepository {
@@ -249,6 +272,7 @@ class _FakeNotificationRepository implements NotificationRepository {
     required String actorId,
     required String type,
     String? postId,
+    String? storyId,
   }) async {}
 
   @override

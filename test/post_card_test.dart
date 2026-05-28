@@ -88,12 +88,15 @@ void main() {
     );
   });
 
-  testWidgets('renders zero like count when nobody has liked', (tester) async {
+  testWidgets('hides count chip when nobody has liked', (tester) async {
     final post = _samplePost();
     await tester.pumpWidget(buildCard(post: post));
     await tester.pump();
 
-    expect(find.text('0'), findsWidgets);
+    // Instagram-style: when the count is 0, we render just the outline heart
+    // with no inline count. The like button itself remains present.
+    expect(find.byIcon(Icons.favorite_border), findsOneWidget);
+    expect(find.byKey(const Key('like_button_p1')), findsOneWidget);
   });
 
   testWidgets('shows filled heart and increments count after tap', (
@@ -267,10 +270,14 @@ class _FakeCommentRepo implements CommentRepository {
   Future<List<CommentModel>> fetchComments(String postId) async => [];
 
   @override
+  Future<List<CommentModel>> fetchReplies(String parentCommentId) async => [];
+
+  @override
   Future<CommentModel> addComment({
     required String postId,
     required String userId,
     required String body,
+    String? parentCommentId,
   }) async => throw UnimplementedError();
 
   @override
@@ -285,10 +292,28 @@ class _FakeCommentRepo implements CommentRepository {
   ) async => {for (final id in postIds) id: 0};
 
   @override
+  Future<List<CommentModel>> hydrateMetadata(
+    List<CommentModel> comments, {
+    required String currentUserId,
+  }) async => comments;
+
+  @override
+  Future<bool> toggleCommentLike({
+    required String commentId,
+    required String userId,
+  }) async => true;
+
+  @override
   RealtimeChannel subscribeToComments({
     required String postId,
     required void Function(CommentModel comment) onCommentAdded,
     void Function(String commentId)? onCommentDeleted,
+  }) => throw UnimplementedError();
+
+  @override
+  RealtimeChannel subscribeToAllComments({
+    required void Function(String postId) onCommentAdded,
+    required void Function(String postId) onCommentDeleted,
   }) => throw UnimplementedError();
 }
 
@@ -366,6 +391,7 @@ class _FakeNotificationRepo implements NotificationRepository {
     required String actorId,
     required String type,
     String? postId,
+    String? storyId,
   }) async {
     this.recipientId = recipientId;
     this.actorId = actorId;

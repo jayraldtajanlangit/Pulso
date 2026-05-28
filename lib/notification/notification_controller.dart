@@ -56,7 +56,11 @@ class NotificationController extends Notifier<NotificationState> {
   Future<void> load(String userId) async {
     state = state.copyWith(isLoading: true);
     try {
-      final notifications = await _repository.fetchNotifications(userId);
+      // Defensive: drop any legacy 'message' rows that may still exist in
+      // the database from before the messaging feature was removed.
+      final raw = await _repository.fetchNotifications(userId);
+      final notifications =
+          raw.where((n) => n.type != 'message').toList();
       final unreadCount = notifications.where((n) => !n.read).length;
       state = NotificationState(
         notifications: notifications,
@@ -81,6 +85,8 @@ class NotificationController extends Notifier<NotificationState> {
   void _subscribe(String userId) {
     if (_channel != null) return;
     _channel = _repository.subscribe(userId, (notification) {
+      // Defensive: drop any legacy 'message' rows.
+      if (notification.type == 'message') return;
       state = state.copyWith(
         notifications: [notification, ...state.notifications],
         unreadCount: state.unreadCount + 1,

@@ -5,12 +5,20 @@ import 'notification_model.dart';
 abstract class NotificationRepository {
   Future<List<NotificationModel>> fetchNotifications(String userId);
   Future<void> markAllRead(String userId);
+
+  /// Insert a new notification row.
+  ///
+  /// For story reactions, pass [storyId] (and not [postId]).
+  /// For post likes / comments, pass [postId].
+  /// For follow events, pass neither.
   Future<void> insertNotification({
     required String recipientId,
     required String actorId,
     required String type,
     String? postId,
+    String? storyId,
   });
+
   RealtimeChannel subscribe(
     String userId,
     void Function(NotificationModel) onNew,
@@ -23,7 +31,8 @@ class SupabaseNotificationRepository implements NotificationRepository {
   final SupabaseClient _client;
 
   static const _select =
-      '*, actor:profiles!actor_id(username, avatar_url), post:posts!post_id(image_url)';
+      '*, actor:profiles!actor_id(username, avatar_url), '
+      'post:posts!post_id(image_url), story:stories!story_id(image_url)';
 
   @override
   Future<List<NotificationModel>> fetchNotifications(String userId) async {
@@ -54,6 +63,7 @@ class SupabaseNotificationRepository implements NotificationRepository {
     required String actorId,
     required String type,
     String? postId,
+    String? storyId,
   }) async {
     if (recipientId == actorId) return; // never notify yourself
     await _client.from('notifications').insert({
@@ -61,6 +71,7 @@ class SupabaseNotificationRepository implements NotificationRepository {
       'actor_id': actorId,
       'type': type,
       if (postId != null) 'post_id': postId,
+      if (storyId != null) 'story_id': storyId,
     });
   }
 

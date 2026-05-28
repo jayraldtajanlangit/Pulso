@@ -12,7 +12,6 @@ import '../providers/notification_providers.dart';
 import '../providers/post_providers.dart';
 import '../widgets/post_card.dart';
 import '../widgets/stories_row.dart';
-import 'notifications_screen.dart';
 import 'post_detail_screen.dart';
 import 'profile_screen.dart';
 
@@ -66,6 +65,14 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
       ref
           .read(likeControllerProvider.notifier)
           .subscribe(currentUserId: userId);
+    } catch (_) {}
+
+    // Keep feed-level comment counts in sync across clients, even when the
+    // user hasn't opened a specific post's comment list.
+    try {
+      ref
+          .read(commentControllerProvider.notifier)
+          .ensureGlobalCountsSubscription();
     } catch (_) {}
 
     await Future.wait([
@@ -166,51 +173,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
             color: Theme.of(context).colorScheme.primary,
           ),
         ),
-        actions: [
-          Stack(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_none),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const NotificationsScreen(),
-                  ),
-                ),
-              ),
-              Consumer(
-                builder: (context, ref, _) {
-                  final unread = ref.watch(
-                    notificationControllerProvider.select((s) => s.unreadCount),
-                  );
-                  if (unread == 0) return const SizedBox.shrink();
-                  return Positioned(
-                    top: 6,
-                    right: 6,
-                    child: Container(
-                      width: 16,
-                      height: 16,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          unread > 9 ? '9+' : '$unread',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ],
         bottom: TabBar(
           controller: _tabController,
           labelStyle: const TextStyle(

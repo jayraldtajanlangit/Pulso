@@ -157,7 +157,9 @@ class FakeCommentRepository implements CommentRepository {
 
   @override
   Future<List<CommentModel>> fetchComments(String postId) async {
-    final scoped = _comments.where((c) => c.postId == postId).toList()
+    final scoped = _comments
+        .where((c) => c.postId == postId && c.parentCommentId == null)
+        .toList()
       ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
     return scoped;
   }
@@ -167,6 +169,7 @@ class FakeCommentRepository implements CommentRepository {
     required String postId,
     required String userId,
     required String body,
+    String? parentCommentId,
   }) async {
     addCommentCalls++;
     final created = CommentModel(
@@ -174,10 +177,20 @@ class FakeCommentRepository implements CommentRepository {
       postId: postId,
       userId: userId,
       body: body,
+      parentCommentId: parentCommentId,
       createdAt: DateTime(2024).add(Duration(seconds: _nextId)),
     );
     _comments.add(created);
     return created;
+  }
+
+  @override
+  Future<List<CommentModel>> fetchReplies(String parentCommentId) async {
+    final scoped = _comments
+        .where((c) => c.parentCommentId == parentCommentId)
+        .toList()
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    return scoped;
   }
 
   @override
@@ -201,6 +214,18 @@ class FakeCommentRepository implements CommentRepository {
   }
 
   @override
+  Future<List<CommentModel>> hydrateMetadata(
+    List<CommentModel> comments, {
+    required String currentUserId,
+  }) async => comments;
+
+  @override
+  Future<bool> toggleCommentLike({
+    required String commentId,
+    required String userId,
+  }) async => true;
+
+  @override
   RealtimeChannel subscribeToComments({
     required String postId,
     required void Function(CommentModel comment) onCommentAdded,
@@ -209,4 +234,10 @@ class FakeCommentRepository implements CommentRepository {
     // Subscription is not exercised in unit tests.
     throw UnimplementedError();
   }
+
+  @override
+  RealtimeChannel subscribeToAllComments({
+    required void Function(String postId) onCommentAdded,
+    required void Function(String postId) onCommentDeleted,
+  }) => throw UnimplementedError();
 }

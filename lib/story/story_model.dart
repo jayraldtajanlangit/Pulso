@@ -13,6 +13,7 @@ class StoryModel {
     this.authorAvatarUrl,
     this.viewCount = 0,
     this.viewedByCurrentUser = false,
+    this.isLikedByMe = false,
   });
 
   final String id;
@@ -26,6 +27,9 @@ class StoryModel {
   final String? authorAvatarUrl;
   final int viewCount;
   final bool viewedByCurrentUser;
+
+  /// True if the current viewer has reacted (hearted) this story.
+  final bool isLikedByMe;
 
   bool get isExpired => DateTime.now().isAfter(expiresAt);
 
@@ -44,10 +48,11 @@ class StoryModel {
       authorAvatarUrl: profile?['avatar_url'] as String?,
       viewCount: map['view_count'] as int? ?? 0,
       viewedByCurrentUser: map['viewed_by_current_user'] as bool? ?? false,
+      isLikedByMe: map['is_liked_by_me'] as bool? ?? false,
     );
   }
 
-  StoryModel copyWith({bool? viewedByCurrentUser}) {
+  StoryModel copyWith({bool? viewedByCurrentUser, bool? isLikedByMe}) {
     return StoryModel(
       id: id,
       userId: userId,
@@ -60,6 +65,7 @@ class StoryModel {
       authorAvatarUrl: authorAvatarUrl,
       viewCount: viewCount,
       viewedByCurrentUser: viewedByCurrentUser ?? this.viewedByCurrentUser,
+      isLikedByMe: isLikedByMe ?? this.isLikedByMe,
     );
   }
 }

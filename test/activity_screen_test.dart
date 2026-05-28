@@ -38,41 +38,48 @@ void main() {
     expect(repo.markAllReadCalls, 1);
   });
 
-  testWidgets('activity screen describes shared-post message notifications', (
-    tester,
-  ) async {
-    final repo = _FakeNotificationRepository(
-      notifications: [
-        NotificationModel(
-          id: 'n2',
-          recipientId: 'me',
-          actorId: 'actor',
-          type: 'message',
-          postId: 'post-1',
-          read: false,
-          createdAt: DateTime.now(),
-          actorUsername: 'alice',
-        ),
-      ],
-    );
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          authRepositoryProvider.overrideWithValue(_StubAuthRepository()),
-          notificationRepositoryProvider.overrideWithValue(repo),
-          followRepositoryProvider.overrideWithValue(_FakeFollowRepository()),
+  testWidgets(
+    'activity screen hides message-type notifications (they belong in the Messages tab)',
+    (tester) async {
+      final repo = _FakeNotificationRepository(
+        notifications: [
+          NotificationModel(
+            id: 'n2',
+            recipientId: 'me',
+            actorId: 'actor',
+            type: 'message',
+            postId: 'post-1',
+            read: false,
+            createdAt: DateTime.now(),
+            actorUsername: 'alice',
+          ),
         ],
-        child: const MaterialApp(home: ActivityScreen()),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
 
-    expect(
-      find.textContaining('sent you a post', findRichText: true),
-      findsOneWidget,
-    );
-  });
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authRepositoryProvider.overrideWithValue(_StubAuthRepository()),
+            notificationRepositoryProvider.overrideWithValue(repo),
+            followRepositoryProvider.overrideWithValue(_FakeFollowRepository()),
+          ],
+          child: const MaterialApp(home: ActivityScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Message/shared-post events should NOT appear in the bell — they live
+      // in the Messages tab instead.
+      expect(
+        find.textContaining('sent you a post', findRichText: true),
+        findsNothing,
+      );
+      expect(
+        find.textContaining('sent you a message', findRichText: true),
+        findsNothing,
+      );
+    },
+  );
 }
 
 class _StubAuthRepository implements AuthRepository {
@@ -133,6 +140,7 @@ class _FakeNotificationRepository implements NotificationRepository {
     required String actorId,
     required String type,
     String? postId,
+    String? storyId,
   }) async {}
 
   @override

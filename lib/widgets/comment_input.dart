@@ -56,15 +56,30 @@ class _CommentInputState extends ConsumerState<CommentInput> {
     final text = _controller.text;
     if (text.trim().isEmpty) return;
 
+    final replyTarget = ref.read(replyTargetProvider(widget.postId));
+
     _controller.clear();
     setState(() => _hasText = false);
+    // Clear the reply target after sending.
+    ref.read(replyTargetProvider(widget.postId).notifier).clear();
 
     await ref.read(commentControllerProvider.notifier).addComment(
       postId: widget.postId,
       userId: session.userId,
       body: text,
       postOwnerId: widget.postOwnerId,
+      parentCommentId: replyTarget?.commentId,
     );
+
+    // Auto-expand the parent comment's replies so the new reply shows up.
+    if (replyTarget != null) {
+      await ref
+          .read(commentControllerProvider.notifier)
+          .loadReplies(
+            postId: widget.postId,
+            parentCommentId: replyTarget.commentId,
+          );
+    }
   }
 
   @override
@@ -78,6 +93,7 @@ class _CommentInputState extends ConsumerState<CommentInput> {
       commentControllerProvider
           .select((s) => s.threadFor(widget.postId).errorMessage),
     );
+    final replyTarget = ref.watch(replyTargetProvider(widget.postId));
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -93,6 +109,48 @@ class _CommentInputState extends ConsumerState<CommentInput> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (replyTarget != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 0, 4, 6),
+                child: Row(
+                  children: [
+                    Text(
+                      'Replying to ',
+                      style: TextStyle(
+                        color: Colors.black.withValues(alpha: 0.6),
+                        fontSize: 12,
+                      ),
+                    ),
+                    Text(
+                      '@${replyTarget.username}',
+                      style: TextStyle(
+                        color: primary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () {
+                        ref
+                            .read(replyTargetProvider(widget.postId).notifier)
+                            .clear();
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        child: Icon(
+                          Icons.close,
+                          size: 16,
+                          color: Color(0xFF9CA3AF),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             if (error != null)
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 0, 4, 6),
@@ -122,7 +180,9 @@ class _CommentInputState extends ConsumerState<CommentInput> {
                     maxLines: 4,
                     textCapitalization: TextCapitalization.sentences,
                     decoration: InputDecoration(
-                      hintText: widget.hintText,
+                      hintText: replyTarget != null
+                          ? 'Reply to @${replyTarget.username}...'
+                          : widget.hintText,
                       hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
                       filled: true,
                       fillColor: const Color(0xFFF3F4F6),

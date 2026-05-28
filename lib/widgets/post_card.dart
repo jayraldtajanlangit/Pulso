@@ -9,12 +9,8 @@ import '../post/post_model.dart';
 import '../providers/auth_providers.dart';
 import '../providers/comment_providers.dart';
 import '../providers/like_providers.dart';
-import '../providers/message_providers.dart';
 import '../providers/post_providers.dart';
-import '../screens/conversation_screen.dart';
-import 'like_button.dart';
 import 'profile_avatar.dart';
-import 'user_picker_modal.dart';
 
 class PostCard extends ConsumerWidget {
   const PostCard({
@@ -156,60 +152,6 @@ class PostCard extends ConsumerWidget {
     onHidden?.call();
   }
 
-  void _showSendError(BuildContext context) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("Couldn't send post")));
-  }
-
-  Future<void> _onSendTap(BuildContext context, WidgetRef ref) async {
-    final currentUserId = ref.read(authControllerProvider).session?.userId;
-    if (currentUserId == null) return;
-
-    final result = await showUserPickerModal(context);
-    if (result == null || !context.mounted) return;
-
-    final recipient = result.recipient;
-    final message = result.message.trim();
-
-    try {
-      final controller = ref.read(messageControllerProvider.notifier);
-      final conversationId = await controller.findOrCreateConversation(
-        currentUserId: currentUserId,
-        otherUserId: recipient.id,
-      );
-
-      final sent = await controller.sendMessage(
-        conversationId: conversationId,
-        senderId: currentUserId,
-        recipientId: recipient.id,
-        body: message.isEmpty ? null : message,
-        sharedPostId: post.id,
-      );
-
-      if (!context.mounted) return;
-      if (!sent) {
-        _showSendError(context);
-        return;
-      }
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ConversationScreen(
-            conversationId: conversationId,
-            otherUserId: recipient.id,
-            otherUsername: recipient.username ?? recipient.displayName ?? '?',
-            otherAvatarUrl: recipient.avatarUrl,
-          ),
-        ),
-      );
-    } catch (_) {
-      if (!context.mounted) return;
-      _showSendError(context);
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUserId = ref.watch(
@@ -306,7 +248,7 @@ class PostCard extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'report',
                       child: Row(
                         children: [
@@ -330,57 +272,29 @@ class PostCard extends ConsumerWidget {
             onTap: onTap,
             child: _ImageCarousel(images: post.imageUrls),
           ),
-        // Actions row
+        // Actions row — Instagram-style inline counts
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
           child: Row(
             children: [
-              LikeButton(postId: post.id, postOwnerId: post.userId),
-              IconButton(
-                icon: const Icon(Icons.chat_bubble_outline),
-                onPressed: onComment,
+              _InlineLikeAction(
+                postId: post.id,
+                postOwnerId: post.userId,
               ),
-              IconButton(
-                icon: const Icon(Icons.send_outlined),
-                onPressed: () => _onSendTap(context, ref),
+              const SizedBox(width: 4),
+              _InlineCommentAction(
+                postId: post.id,
+                commentCount: commentCount,
+                onTap: onComment,
               ),
               const Spacer(),
-              IconButton(
-                icon: Icon(
-                  isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                ),
-                onPressed: onBookmark,
-              ),
-            ],
-          ),
-        ),
-        // Counts
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Row(
-            children: [
-              LikeCountText(
-                postId: post.id,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(width: 4),
-              const Icon(Icons.favorite, size: 13, color: Colors.black87),
-              const SizedBox(width: 12),
-              Text(
-                '$commentCount',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(width: 4),
-              const Icon(
-                Icons.chat_bubble_outline,
-                size: 13,
-                color: Colors.black87,
+              _InlineIconButton(
+                icon: isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                onTap: onBookmark,
+                tooltip: 'Save',
+                color: isBookmarked
+                    ? Theme.of(context).colorScheme.primary
+                    : null,
               ),
             ],
           ),
@@ -700,5 +614,154 @@ class _ImageCarouselState extends State<_ImageCarousel> {
         );
       },
     );
+  }
+}
+
+// ─── Inline action widgets (Instagram-style) ──────────────────────────────────
+
+String _formatCount(int n) {
+  if (n < 1000) return '$n';
+  if (n < 10000) {
+    final v = (n / 1000).toStringAsFixed(1);
+    return '${v.endsWith('.0') ? v.substring(0, v.length - 2) : v}K';
+  }
+  if (n < 1000000) return '${(n / 1000).round()}K';
+  final v = (n / 1000000).toStringAsFixed(1);
+  return '${v.endsWith('.0') ? v.substring(0, v.length - 2) : v}M';
+}
+
+class _InlineLikeAction extends ConsumerWidget {
+  const _InlineLikeAction({required this.postId, required this.postOwnerId});
+
+  final String postId;
+  final String postOwnerId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(authControllerProvider).session;
+    final status = ref.watch(
+      likeControllerProvider.select((s) => s.statusFor(postId)),
+    );
+    final color = status.isLiked
+        ? Theme.of(context).colorScheme.primary
+        : Colors.black87;
+
+    return InkWell(
+      key: Key('like_button_$postId'),
+      onTap: () {
+        if (session == null) return;
+        ref.read(likeControllerProvider.notifier).toggle(
+              postId: postId,
+              currentUserId: session.userId,
+              postOwnerId: postOwnerId,
+            );
+      },
+      borderRadius: BorderRadius.circular(22),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 44),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedScale(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutBack,
+              scale: status.isLiked ? 1.1 : 1.0,
+              child: Icon(
+                status.isLiked ? Icons.favorite : Icons.favorite_border,
+                color: color,
+                size: 26,
+              ),
+            ),
+            if (status.count > 0) ...[
+              const SizedBox(width: 6),
+              Text(
+                _formatCount(status.count),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InlineCommentAction extends StatelessWidget {
+  const _InlineCommentAction({
+    required this.postId,
+    required this.commentCount,
+    this.onTap,
+  });
+
+  final String postId;
+  final int commentCount;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(22),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 44),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.chat_bubble_outline,
+              color: Colors.black87,
+              size: 24,
+            ),
+            if (commentCount > 0) ...[
+              const SizedBox(width: 6),
+              Text(
+                _formatCount(commentCount),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InlineIconButton extends StatelessWidget {
+  const _InlineIconButton({
+    required this.icon,
+    required this.onTap,
+    this.tooltip,
+    this.color,
+  });
+
+  final IconData icon;
+  final VoidCallback? onTap;
+  final String? tooltip;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final btn = InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(22),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.all(8),
+        child: Icon(icon, color: color ?? Colors.black87, size: 24),
+      ),
+    );
+    if (tooltip == null) return btn;
+    return Tooltip(message: tooltip!, child: btn);
   }
 }

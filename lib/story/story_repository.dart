@@ -23,6 +23,13 @@ abstract class StoryRepository {
     required File imageFile,
     String? musicClipId,
   });
+
+  /// Toggle a heart reaction on [storyId] for [userId]. Returns true if the
+  /// story is now liked.
+  Future<bool> toggleReaction({
+    required String storyId,
+    required String userId,
+  });
 }
 
 class SupabaseStoryRepository implements StoryRepository {
@@ -53,6 +60,7 @@ class SupabaseStoryRepository implements StoryRepository {
 
     Map<String, int> viewCounts = {};
     Set<String> viewedByUser = {};
+    Set<String> likedByUser = {};
 
     if (storyIds.isNotEmpty) {
       final views = await _client
@@ -66,6 +74,21 @@ class SupabaseStoryRepository implements StoryRepository {
         viewCounts[sid] = (viewCounts[sid] ?? 0) + 1;
         if (vMap['viewer_id'] == currentUserId) viewedByUser.add(sid);
       }
+
+      // Hydrate which stories the current user has hearted.
+      try {
+        final reactions = await _client
+            .from('story_reactions')
+            .select('story_id')
+            .eq('user_id', currentUserId)
+            .inFilter('story_id', storyIds);
+        for (final r in reactions as List) {
+          likedByUser
+              .add((r as Map<String, dynamic>)['story_id'] as String);
+        }
+      } catch (_) {
+        // story_reactions table may not exist yet — degrade gracefully.
+      }
     }
 
     final result = <String, List<StoryModel>>{};
@@ -76,6 +99,7 @@ class SupabaseStoryRepository implements StoryRepository {
         ...map,
         'view_count': viewCounts[sid] ?? 0,
         'viewed_by_current_user': viewedByUser.contains(sid),
+        'is_liked_by_me': likedByUser.contains(sid),
       });
       result.putIfAbsent(story.userId, () => []).add(story);
     }
@@ -143,5 +167,33 @@ class SupabaseStoryRepository implements StoryRepository {
       'view_count': 0,
       'viewed_by_current_user': false,
     });
+  }
+
+  @override
+  Future<bool> toggleReaction({
+    required String storyId,
+    required String userId,
+  }) async {
+    final existing = await _client
+        .from('story_reactions')
+        .select('id')
+        .eq('story_id', storyId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+    if (existing != null) {
+      await _client
+          .from('story_reactions')
+          .delete()
+          .eq('story_id', storyId)
+          .eq('user_id', userId);
+      return false;
+    }
+
+    await _client.from('story_reactions').insert({
+      'story_id': storyId,
+      'user_id': userId,
+    });
+    return true;
   }
 }

@@ -149,6 +149,11 @@ class FollowController extends Notifier<FollowState> {
       followers: (currentStats.followers + (wasFollowing ? -1 : 1))
           .clamp(0, 1 << 31),
     );
+    final myStats = updatedStats[currentUserId] ?? const FollowStats.zero();
+    updatedStats[currentUserId] = myStats.copyWith(
+      following: (myStats.following + (wasFollowing ? -1 : 1))
+          .clamp(0, 1 << 31),
+    );
 
     state = state.copyWith(
       followingByCurrentUser: updatedSet,
@@ -170,6 +175,7 @@ class FollowController extends Notifier<FollowState> {
         );
         await loadStats(targetUserId);
       }
+      await loadStats(currentUserId);
       if (nowFollowing) {
         try {
           await ref.read(notificationRepositoryProvider).insertNotification(

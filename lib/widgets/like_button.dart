@@ -15,7 +15,7 @@ class LikeButton extends ConsumerWidget {
     required this.postId,
     this.postOwnerId,
     this.iconSize = 24,
-    this.likedColor = Colors.red,
+    this.likedColor,
     this.unlikedColor,
     this.onTapDisabledMessage,
   });
@@ -23,7 +23,9 @@ class LikeButton extends ConsumerWidget {
   final String postId;
   final String? postOwnerId;
   final double iconSize;
-  final Color likedColor;
+
+  /// Defaults to the app's primary color when liked.
+  final Color? likedColor;
   final Color? unlikedColor;
 
   /// Optional snackbar message shown when the user isn't signed in.
@@ -37,7 +39,7 @@ class LikeButton extends ConsumerWidget {
     );
 
     final color = status.isLiked
-        ? likedColor
+        ? (likedColor ?? Theme.of(context).colorScheme.primary)
         : (unlikedColor ?? Theme.of(context).iconTheme.color);
 
     return IconButton(

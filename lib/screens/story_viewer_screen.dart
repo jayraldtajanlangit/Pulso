@@ -45,8 +45,15 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen>
     super.dispose();
   }
 
-  List<StoryModel> get _currentStories =>
-      widget.storiesByUser[_userIds[_userIndex]] ?? [];
+  /// Always read from the live controller state so optimistic updates
+  /// (reactions, view counts) flow back into the viewer without forcing
+  /// the user to leave and re-open the story.
+  List<StoryModel> get _currentStories {
+    final live = ref.read(storyControllerProvider).storiesByUser;
+    return live[_userIds[_userIndex]] ??
+        widget.storiesByUser[_userIds[_userIndex]] ??
+        [];
+  }
 
   StoryModel get _currentStory => _currentStories[_storyIndex];
 
@@ -110,6 +117,10 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Subscribe to the story controller so reactions / views update the UI
+    // immediately without needing to leave and re-open the viewer.
+    ref.watch(storyControllerProvider);
+
     final story = _currentStory;
     final stories = _currentStories;
     final currentUserId =
@@ -118,19 +129,20 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen>
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: GestureDetector(
-        onTapDown: (details) {
-          final width = MediaQuery.of(context).size.width;
-          if (details.globalPosition.dx < width / 2) {
-            _previous();
-          } else {
-            _next();
-          }
-        },
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            CachedNetworkImage(
+      body: StoryReactionOverlay(
+        child: GestureDetector(
+          onTapDown: (details) {
+            final width = MediaQuery.of(context).size.width;
+            if (details.globalPosition.dx < width / 2) {
+              _previous();
+            } else {
+              _next();
+            }
+          },
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              CachedNetworkImage(
               imageUrl: story.imageUrl,
               fit: BoxFit.cover,
               placeholder: (_, _) => const ColoredBox(color: Colors.black),
@@ -290,9 +302,21 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen>
                     ),
                   ],
                 ),
+              )
+            else if (currentUserId != null)
+              Positioned(
+                bottom: MediaQuery.of(context).padding.bottom + 12,
+                right: 12,
+                child: _StoryReactionButton(
+                  storyId: story.id,
+                  storyOwnerId: story.userId,
+                  currentUserId: currentUserId,
+                  isLiked: story.isLikedByMe,
+                ),
               ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -302,5 +326,278 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen>
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     return '${diff.inDays}d ago';
+  }
+}
+
+class _StoryReactionButton extends ConsumerStatefulWidget {
+  const _StoryReactionButton({
+    required this.storyId,
+    required this.storyOwnerId,
+    required this.currentUserId,
+    required this.isLiked,
+  });
+
+  final String storyId;
+  final String storyOwnerId;
+  final String currentUserId;
+  final bool isLiked;
+
+  @override
+  ConsumerState<_StoryReactionButton> createState() =>
+      _StoryReactionButtonState();
+}
+
+class _StoryReactionButtonState extends ConsumerState<_StoryReactionButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _animController;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+    _scale = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.4), weight: 50),
+      TweenSequenceItem(tween: Tween(begin: 1.4, end: 1.0), weight: 50),
+    ]).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _onTap() async {
+    final wasLiked = widget.isLiked;
+    _animController.forward(from: 0);
+    if (!wasLiked) StoryReactionOverlay.showHeart(context);
+
+    try {
+      await ref.read(storyControllerProvider.notifier).toggleReaction(
+            storyId: widget.storyId,
+            currentUserId: widget.currentUserId,
+            storyOwnerId: widget.storyOwnerId,
+          );
+      if (!mounted) return;
+      // Show a clean confirmation chip only on a fresh react.
+      if (!wasLiked) {
+        StoryReactionOverlay.showToast(context, 'Reaction sent');
+      }
+    } catch (_) {
+      // Errors are already handled in the controller (state reverts).
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.25),
+          shape: BoxShape.circle,
+        ),
+        child: ScaleTransition(
+          scale: _scale,
+          child: Icon(
+            widget.isLiked ? Icons.favorite : Icons.favorite_border,
+            color: widget.isLiked ? Colors.red : Colors.white,
+            size: 28,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Inherited entry-point so the reaction button can show a big floating
+/// heart in the centre of the screen. The viewer wraps its body in
+/// [StoryReactionOverlay] and exposes the controller via [of].
+class StoryReactionOverlay extends StatefulWidget {
+  const StoryReactionOverlay({super.key, required this.child});
+
+  final Widget child;
+
+  /// Trigger the floating heart animation from a descendant widget.
+  static void showHeart(BuildContext context) {
+    context.findAncestorStateOfType<_StoryReactionOverlayState>()?.show();
+  }
+
+  /// Show a brief, clean confirmation toast (a dark rounded chip near the
+  /// bottom of the viewer). Use for tiny status messages like "Reaction sent".
+  static void showToast(BuildContext context, String message) {
+    context
+        .findAncestorStateOfType<_StoryReactionOverlayState>()
+        ?.showToast(message);
+  }
+
+  @override
+  State<StoryReactionOverlay> createState() => _StoryReactionOverlayState();
+}
+
+class _StoryReactionOverlayState extends State<StoryReactionOverlay>
+    with TickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _scale;
+  late final Animation<double> _opacity;
+  bool _visible = false;
+
+  // Toast (small chip) overlay state, separate from the floating heart.
+  String? _toastMessage;
+  late final AnimationController _toastCtrl;
+  late final Animation<double> _toastOpacity;
+  late final Animation<Offset> _toastOffset;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _scale = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.4, end: 1.2), weight: 30),
+      TweenSequenceItem(tween: Tween(begin: 1.2, end: 1.0), weight: 20),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 30),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.8), weight: 20),
+    ]).animate(_ctrl);
+    _opacity = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 15),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 55),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 30),
+    ]).animate(_ctrl);
+    _ctrl.addStatusListener((status) {
+      if (status == AnimationStatus.completed && mounted) {
+        setState(() => _visible = false);
+      }
+    });
+
+    _toastCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    );
+    _toastOpacity = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 12),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 64),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 24),
+    ]).animate(_toastCtrl);
+    _toastOffset = Tween<Offset>(
+      begin: const Offset(0, 0.4),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _toastCtrl, curve: Curves.easeOutCubic),
+    );
+    _toastCtrl.addStatusListener((status) {
+      if (status == AnimationStatus.completed && mounted) {
+        setState(() => _toastMessage = null);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    _toastCtrl.dispose();
+    super.dispose();
+  }
+
+  void show() {
+    setState(() => _visible = true);
+    _ctrl.forward(from: 0);
+  }
+
+  void showToast(String message) {
+    setState(() => _toastMessage = message);
+    _toastCtrl.forward(from: 0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        widget.child,
+        if (_visible)
+          IgnorePointer(
+            child: Center(
+              child: AnimatedBuilder(
+                animation: _ctrl,
+                builder: (context, child) => Opacity(
+                  opacity: _opacity.value,
+                  child: Transform.scale(
+                    scale: _scale.value,
+                    child: child,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.favorite,
+                  color: Color(0xFFED4956),
+                  size: 120,
+                  shadows: [
+                    Shadow(color: Colors.black54, blurRadius: 28),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        if (_toastMessage != null)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: MediaQuery.of(context).padding.bottom + 90,
+            child: IgnorePointer(
+              child: Center(
+                child: AnimatedBuilder(
+                  animation: _toastCtrl,
+                  builder: (context, child) {
+                    return Opacity(
+                      opacity: _toastOpacity.value,
+                      child: SlideTransition(
+                        position: _toastOffset,
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.78),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.favorite,
+                          color: Color(0xFFED4956),
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _toastMessage!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }

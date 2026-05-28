@@ -85,7 +85,9 @@ void main() {
     await tester.pumpWidget(build(repo: repo, currentUserId: 'me'));
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.delete_outline), findsOneWidget);
+    // Instagram-style: "Delete" is a text link under the comment (not an
+    // icon button) when the current user can delete it.
+    expect(find.text('Delete'), findsOneWidget);
   });
 
   testWidgets('non-author non-owner cannot delete', (tester) async {
@@ -108,7 +110,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.delete_outline), findsNothing);
+    expect(find.text('Delete'), findsNothing);
   });
 }
 
@@ -132,17 +134,39 @@ class _FakeCommentRepo implements CommentRepository {
     required String postId,
     required String userId,
     required String body,
+    String? parentCommentId,
   }) async {
     final created = CommentModel(
       id: 'c${_nextId++}',
       postId: postId,
       userId: userId,
       body: body,
+      parentCommentId: parentCommentId,
       createdAt: DateTime(2024).add(Duration(seconds: _nextId)),
     );
     _comments.add(created);
     return created;
   }
+
+  @override
+  Future<List<CommentModel>> fetchReplies(String parentCommentId) async {
+    return _comments
+        .where((c) => c.parentCommentId == parentCommentId)
+        .toList()
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+  }
+
+  @override
+  Future<List<CommentModel>> hydrateMetadata(
+    List<CommentModel> comments, {
+    required String currentUserId,
+  }) async => comments;
+
+  @override
+  Future<bool> toggleCommentLike({
+    required String commentId,
+    required String userId,
+  }) async => true;
 
   @override
   Future<void> deleteComment(String commentId) async {
@@ -166,6 +190,12 @@ class _FakeCommentRepo implements CommentRepository {
     void Function(String commentId)? onCommentDeleted,
   }) =>
       throw UnimplementedError();
+
+  @override
+  RealtimeChannel subscribeToAllComments({
+    required void Function(String postId) onCommentAdded,
+    required void Function(String postId) onCommentDeleted,
+  }) => throw UnimplementedError();
 }
 
 class _StubAuth implements AuthRepository {

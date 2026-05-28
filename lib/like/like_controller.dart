@@ -67,9 +67,29 @@ class LikeController extends Notifier<LikeState> {
   /// existing subscription is replaced.
   void subscribe({required String currentUserId}) {
     if (_channel != null) return;
-    _channel = _repository.subscribeToLikes(
-      onLikeChanged: (postId) => _refreshPost(postId, currentUserId),
-    );
+    try {
+      _channel = _repository.subscribeToLikes(
+        onLikeChanged: (postId) {
+          // ignore: avoid_print
+          print('[LikeController] realtime like change for post $postId');
+          _refreshPost(postId, currentUserId);
+        },
+      );
+      // ignore: avoid_print
+      print('[LikeController] subscribed to posts_likes channel');
+    } catch (e) {
+      // ignore: avoid_print
+      print('[LikeController] subscribeToLikes failed: $e');
+    }
+  }
+
+  /// Force a fresh fetch of like counts + isLiked state for all posts the
+  /// controller currently knows about. Use when returning to the feed tab to
+  /// recover from any realtime gaps.
+  Future<void> refreshAllKnownPosts(String currentUserId) async {
+    final ids = state.statuses.keys.toList();
+    if (ids.isEmpty) return;
+    await loadForPosts(postIds: ids, currentUserId: currentUserId);
   }
 
   /// Load counts and current user's like state for a batch of posts.

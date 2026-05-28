@@ -82,6 +82,7 @@ class _FakeRepo implements CommentRepository {
     required String postId,
     required String userId,
     required String body,
+    String? parentCommentId,
   }) async {
     addCalls++;
     lastBody = body;
@@ -90,9 +91,25 @@ class _FakeRepo implements CommentRepository {
       postId: postId,
       userId: userId,
       body: body,
+      parentCommentId: parentCommentId,
       createdAt: DateTime(2024),
     );
   }
+
+  @override
+  Future<List<CommentModel>> fetchReplies(String parentCommentId) async => [];
+
+  @override
+  Future<List<CommentModel>> hydrateMetadata(
+    List<CommentModel> comments, {
+    required String currentUserId,
+  }) async => comments;
+
+  @override
+  Future<bool> toggleCommentLike({
+    required String commentId,
+    required String userId,
+  }) async => true;
 
   @override
   Future<void> deleteComment(String commentId) async {}
@@ -113,6 +130,12 @@ class _FakeRepo implements CommentRepository {
     void Function(String commentId)? onCommentDeleted,
   }) =>
       throw UnimplementedError();
+
+  @override
+  RealtimeChannel subscribeToAllComments({
+    required void Function(String postId) onCommentAdded,
+    required void Function(String postId) onCommentDeleted,
+  }) => throw UnimplementedError();
 }
 
 class _StubAuth implements AuthRepository {
