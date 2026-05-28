@@ -10,13 +10,16 @@ import '../widgets/profile_avatar.dart';
 class ConversationScreen extends ConsumerStatefulWidget {
   const ConversationScreen({
     super.key,
-    required this.conversationId,
+    this.conversationId,
     required this.otherUserId,
     required this.otherUsername,
     this.otherAvatarUrl,
   });
 
-  final String conversationId;
+  /// May be null when opening a conversation that hasn't been created yet.
+  /// In that case the screen will resolve any existing conversation on init,
+  /// and create one lazily when the user sends their first message.
+  final String? conversationId;
   final String otherUserId;
   final String otherUsername;
   final String? otherAvatarUrl;
@@ -30,16 +33,36 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
   final _inputController = TextEditingController();
   final _scrollController = ScrollController();
   bool _hasText = false;
+  String? _conversationId;
 
   @override
   void initState() {
     super.initState();
+    _conversationId = widget.conversationId;
     _inputController.addListener(_onInputChanged);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref
-          .read(messageControllerProvider.notifier)
-          .loadMessages(widget.conversationId);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final id = _conversationId;
+      if (id != null) {
+        await ref.read(messageControllerProvider.notifier).loadMessages(id);
+      } else {
+        await _resolveExistingConversation();
+      }
     });
+  }
+
+  Future<void> _resolveExistingConversation() async {
+    final currentUserId = ref.read(authControllerProvider).session?.userId;
+    if (currentUserId == null) return;
+
+    final existing = await ref
+        .read(messageControllerProvider.notifier)
+        .findExistingConversation(
+          currentUserId: currentUserId,
+          otherUserId: widget.otherUserId,
+        );
+    if (!mounted || existing == null) return;
+    setState(() => _conversationId = existing);
+    await ref.read(messageControllerProvider.notifier).loadMessages(existing);
   }
 
   @override
@@ -61,15 +84,45 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     final currentUserId = ref.read(authControllerProvider).session?.userId;
     if (currentUserId == null) return;
 
+    // Clear the input optimistically; we'll restore it if sending fails so
+    // the user can retry without re-typing.
     _inputController.clear();
     setState(() => _hasText = false);
 
-    await ref.read(messageControllerProvider.notifier).sendMessage(
-          conversationId: widget.conversationId,
+    final convId = _conversationId;
+    final controller = ref.read(messageControllerProvider.notifier);
+
+    try {
+      if (convId == null) {
+        // No conversation yet — use the atomic RPC that creates the
+        // conversation AND inserts the message in a single transaction.
+        final result = await controller.sendDirectMessage(
+          recipientUserId: widget.otherUserId,
+          senderId: currentUserId,
+          body: text,
+        );
+        if (!mounted) return;
+        setState(() => _conversationId = result.conversationId);
+      } else {
+        final ok = await controller.sendMessage(
+          conversationId: convId,
           senderId: currentUserId,
           recipientId: widget.otherUserId,
           body: text,
         );
+        if (!ok) throw StateError('sendMessage returned false');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      // Restore the text and tell the user — the previous behaviour silently
+      // dropped the message, which made the whole feature look broken.
+      _inputController.text = text;
+      setState(() => _hasText = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Couldn't send message: $e")),
+      );
+      return;
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -86,10 +139,12 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
   Widget build(BuildContext context) {
     final currentUserId =
         ref.watch(authControllerProvider.select((s) => s.session?.userId));
-    final messages = ref.watch(
-      messageControllerProvider
-          .select((s) => s.messagesFor(widget.conversationId)),
-    );
+    final convId = _conversationId;
+    final List<MessageModel> messages = convId == null
+        ? const <MessageModel>[]
+        : ref.watch(
+            messageControllerProvider.select((s) => s.messagesFor(convId)),
+          );
     final isSending =
         ref.watch(messageControllerProvider.select((s) => s.isSending));
     final primary = Theme.of(context).colorScheme.primary;

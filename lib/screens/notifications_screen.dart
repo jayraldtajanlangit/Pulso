@@ -21,10 +21,16 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final userId = ref.read(authControllerProvider).session?.userId;
-      if (userId == null) return;
-      ref.read(notificationControllerProvider.notifier).markAllRead(userId);
+      _loadAndMarkRead();
     });
+  }
+
+  Future<void> _loadAndMarkRead() async {
+    final userId = ref.read(authControllerProvider).session?.userId;
+    if (userId == null) return;
+    final controller = ref.read(notificationControllerProvider.notifier);
+    await controller.load(userId);
+    await controller.markAllRead(userId);
   }
 
   @override
@@ -45,17 +51,17 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       body: state.isLoading && state.notifications.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : state.notifications.isEmpty
-              ? const Center(
-                  child: Text(
-                    'No notifications yet',
-                    style: TextStyle(color: Color(0xFF9CA3AF)),
-                  ),
-                )
-              : ListView.builder(
-                  itemCount: state.notifications.length,
-                  itemBuilder: (context, i) =>
-                      _NotificationRow(notification: state.notifications[i]),
-                ),
+          ? const Center(
+              child: Text(
+                'No notifications yet',
+                style: TextStyle(color: Color(0xFF9CA3AF)),
+              ),
+            )
+          : ListView.builder(
+              itemCount: state.notifications.length,
+              itemBuilder: (context, i) =>
+                  _NotificationRow(notification: state.notifications[i]),
+            ),
     );
   }
 }
@@ -74,6 +80,7 @@ class _NotificationRow extends ConsumerWidget {
       case 'follow':
         return 'started following you';
       case 'message':
+        if (notification.postId != null) return 'sent you a post';
         return 'sent you a message';
       default:
         return 'interacted with you';
@@ -96,9 +103,7 @@ class _NotificationRow extends ConsumerWidget {
     return Container(
       decoration: isUnread
           ? BoxDecoration(
-              border: Border(
-                left: BorderSide(color: primary, width: 3),
-              ),
+              border: Border(left: BorderSide(color: primary, width: 3)),
             )
           : null,
       child: Padding(
@@ -150,8 +155,9 @@ class _FollowBackButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentUserId =
-        ref.watch(authControllerProvider.select((s) => s.session?.userId));
+    final currentUserId = ref.watch(
+      authControllerProvider.select((s) => s.session?.userId),
+    );
     if (currentUserId == null || currentUserId == actorId) {
       return const SizedBox.shrink();
     }
@@ -162,10 +168,9 @@ class _FollowBackButton extends ConsumerWidget {
 
     return GestureDetector(
       onTap: () {
-        ref.read(followControllerProvider.notifier).toggleFollow(
-          currentUserId: currentUserId,
-          targetUserId: actorId,
-        );
+        ref
+            .read(followControllerProvider.notifier)
+            .toggleFollow(currentUserId: currentUserId, targetUserId: actorId);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -206,8 +211,7 @@ class _PostThumbnail extends StatelessWidget {
         height: 40,
         fit: BoxFit.cover,
         placeholder: (_, __) => const ColoredBox(color: Color(0xFFE5E7EB)),
-        errorWidget: (_, __, ___) =>
-            const ColoredBox(color: Color(0xFFE5E7EB)),
+        errorWidget: (_, __, ___) => const ColoredBox(color: Color(0xFFE5E7EB)),
       ),
     );
   }

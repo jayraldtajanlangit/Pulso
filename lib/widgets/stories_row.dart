@@ -25,16 +25,18 @@ class _StoriesRowState extends ConsumerState<StoriesRow> {
     super.didChangeDependencies();
     if (_didInit) return;
     _didInit = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final followingIds = ref
+          .read(followControllerProvider)
+          .followingByCurrentUser
+          .toList();
+      _load(followingIds);
+    });
   }
 
-  Future<void> _load() async {
+  Future<void> _load(List<String> followingIds) async {
     final userId = ref.read(authControllerProvider).session?.userId;
     if (userId == null) return;
-    final followingIds = ref
-        .read(followControllerProvider)
-        .followingByCurrentUser
-        .toList();
     await ref
         .read(storyControllerProvider.notifier)
         .loadActiveStories(followingIds: followingIds, currentUserId: userId);
@@ -47,6 +49,11 @@ class _StoriesRowState extends ConsumerState<StoriesRow> {
     );
     final storiesByUser = ref.watch(
       storyControllerProvider.select((s) => s.storiesByUser),
+    );
+
+    ref.listen(
+      followControllerProvider.select((s) => s.followingByCurrentUser),
+      (_, followingIds) => _load(followingIds.toList()),
     );
 
     return SizedBox(
@@ -101,7 +108,6 @@ class _OwnStoryTile extends ConsumerWidget {
               height: 70,
               child: Stack(
                 children: [
-                  // Avatar with ring — tap to view own story
                   GestureDetector(
                     onTap: () {
                       if (stories.isNotEmpty) {
@@ -157,7 +163,6 @@ class _OwnStoryTile extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  // + badge — always tappable to create a new story
                   Positioned(
                     right: 2,
                     bottom: 2,

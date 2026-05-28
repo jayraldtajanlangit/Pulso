@@ -130,7 +130,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
               const SizedBox(height: 16),
             ],
-            // Avatar
             Center(
               child: GestureDetector(
                 key: const Key('uploadAvatarButton'),
@@ -179,7 +178,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
             ),
             const SizedBox(height: 32),
-            // Display name
             const Text(
               'Display name',
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
@@ -201,7 +199,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            // Username
             const Text(
               'Username',
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
@@ -223,7 +220,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            // Bio
             const Text(
               'Bio',
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),

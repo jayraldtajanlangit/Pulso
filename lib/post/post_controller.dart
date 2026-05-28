@@ -235,6 +235,12 @@ class PostController extends Notifier<PostState> {
     }
   }
 
+  void hidePost(String postId) {
+    state = state.copyWith(
+      posts: state.posts.where((p) => p.id != postId).toList(),
+    );
+  }
+
   Future<void> pickImage() async {
     final picked = await ref.read(imagePickerServiceProvider).pickImage();
     if (picked != null) {

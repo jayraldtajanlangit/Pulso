@@ -27,6 +27,7 @@ class PostCard extends ConsumerWidget {
     this.onBookmark,
     this.isBookmarked = false,
     this.onDeleted,
+    this.onHidden,
   });
 
   final PostModel post;
@@ -37,6 +38,7 @@ class PostCard extends ConsumerWidget {
   final VoidCallback? onBookmark;
   final bool isBookmarked;
   final VoidCallback? onDeleted;
+  final VoidCallback? onHidden;
 
   String get _displayUsername {
     final username = post.authorUsername;
@@ -48,8 +50,18 @@ class PostCard extends ConsumerWidget {
 
   String get _formattedDate {
     const months = [
-      'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-      'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
+      'JAN',
+      'FEB',
+      'MAR',
+      'APR',
+      'MAY',
+      'JUN',
+      'JUL',
+      'AUG',
+      'SEP',
+      'OCT',
+      'NOV',
+      'DEC',
     ];
     return '${months[post.createdAt.month - 1]} ${post.createdAt.day}';
   }
@@ -92,10 +104,9 @@ class PostCard extends ConsumerWidget {
             FilledButton(
               onPressed: () async {
                 Navigator.of(ctx).pop();
-                await ref.read(postControllerProvider.notifier).editPost(
-                      post.id,
-                      caption: controller.text,
-                    );
+                await ref
+                    .read(postControllerProvider.notifier)
+                    .editPost(post.id, caption: controller.text);
               },
               child: const Text('Save'),
             ),
@@ -131,45 +142,79 @@ class PostCard extends ConsumerWidget {
     }
   }
 
+  void _reportPost(BuildContext context) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Post reported')));
+  }
+
+  void _hidePost(BuildContext context, WidgetRef ref) {
+    ref.read(postControllerProvider.notifier).hidePost(post.id);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Post hidden')));
+    onHidden?.call();
+  }
+
+  void _showSendError(BuildContext context) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text("Couldn't send post")));
+  }
+
   Future<void> _onSendTap(BuildContext context, WidgetRef ref) async {
     final currentUserId = ref.read(authControllerProvider).session?.userId;
     if (currentUserId == null) return;
 
-    final recipient = await showUserPickerModal(context);
-    if (recipient == null || !context.mounted) return;
+    final result = await showUserPickerModal(context);
+    if (result == null || !context.mounted) return;
 
-    final conversationId = await ref
-        .read(messageControllerProvider.notifier)
-        .findOrCreateConversation(
-          currentUserId: currentUserId,
-          otherUserId: recipient.id,
-        );
+    final recipient = result.recipient;
+    final message = result.message.trim();
 
-    await ref.read(messageControllerProvider.notifier).sendMessage(
-          conversationId: conversationId,
-          senderId: currentUserId,
-          recipientId: recipient.id,
-          sharedPostId: post.id,
-        );
+    try {
+      final controller = ref.read(messageControllerProvider.notifier);
+      final conversationId = await controller.findOrCreateConversation(
+        currentUserId: currentUserId,
+        otherUserId: recipient.id,
+      );
 
-    if (!context.mounted) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ConversationScreen(
-          conversationId: conversationId,
-          otherUserId: recipient.id,
-          otherUsername: recipient.username ?? recipient.displayName ?? '?',
-          otherAvatarUrl: recipient.avatarUrl,
+      final sent = await controller.sendMessage(
+        conversationId: conversationId,
+        senderId: currentUserId,
+        recipientId: recipient.id,
+        body: message.isEmpty ? null : message,
+        sharedPostId: post.id,
+      );
+
+      if (!context.mounted) return;
+      if (!sent) {
+        _showSendError(context);
+        return;
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ConversationScreen(
+            conversationId: conversationId,
+            otherUserId: recipient.id,
+            otherUsername: recipient.username ?? recipient.displayName ?? '?',
+            otherAvatarUrl: recipient.avatarUrl,
+          ),
         ),
-      ),
-    );
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      _showSendError(context);
+    }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentUserId =
-        ref.watch(authControllerProvider.select((s) => s.session?.userId));
+    final currentUserId = ref.watch(
+      authControllerProvider.select((s) => s.session?.userId),
+    );
     final isOwner = currentUserId == post.userId;
 
     final liveCommentCount = ref.watch(
@@ -206,14 +251,16 @@ class PostCard extends ConsumerWidget {
                   ),
                 ),
               ),
-              if (isOwner)
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_horiz, size: 20),
-                  onSelected: (value) {
-                    if (value == 'edit') _showEditSheet(context, ref);
-                    if (value == 'delete') _confirmDelete(context, ref);
-                  },
-                  itemBuilder: (_) => const [
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_horiz, size: 20),
+                onSelected: (value) {
+                  if (value == 'edit') _showEditSheet(context, ref);
+                  if (value == 'delete') _confirmDelete(context, ref);
+                  if (value == 'report') _reportPost(context);
+                  if (value == 'hide') _hidePost(context, ref);
+                },
+                itemBuilder: (_) => [
+                  if (isOwner) ...const [
                     PopupMenuItem(
                       value: 'edit',
                       child: Row(
@@ -228,16 +275,50 @@ class PostCard extends ConsumerWidget {
                       value: 'delete',
                       child: Row(
                         children: [
-                          Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                          Icon(
+                            Icons.delete_outline,
+                            size: 18,
+                            color: Colors.red,
+                          ),
                           SizedBox(width: 10),
                           Text('Delete', style: TextStyle(color: Colors.red)),
                         ],
                       ),
                     ),
+                    PopupMenuItem(
+                      value: 'hide',
+                      child: Row(
+                        children: [
+                          Icon(Icons.visibility_off_outlined, size: 18),
+                          SizedBox(width: 10),
+                          Text('Hide post'),
+                        ],
+                      ),
+                    ),
+                  ] else ...const [
+                    PopupMenuItem(
+                      value: 'hide',
+                      child: Row(
+                        children: [
+                          Icon(Icons.visibility_off_outlined, size: 18),
+                          SizedBox(width: 10),
+                          Text('Hide post'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'report',
+                      child: Row(
+                        children: [
+                          Icon(Icons.flag_outlined, size: 18),
+                          SizedBox(width: 10),
+                          Text('Report'),
+                        ],
+                      ),
+                    ),
                   ],
-                )
-              else
-                const Icon(Icons.more_horiz, size: 20),
+                ],
+              ),
             ],
           ),
         ),
@@ -245,6 +326,7 @@ class PostCard extends ConsumerWidget {
         if (post.imageUrls.isNotEmpty)
           _DoubleTapLikeWrapper(
             postId: post.id,
+            postOwnerId: post.userId,
             onTap: onTap,
             child: _ImageCarousel(images: post.imageUrls),
           ),
@@ -331,11 +413,13 @@ class PostCard extends ConsumerWidget {
 class _DoubleTapLikeWrapper extends ConsumerStatefulWidget {
   const _DoubleTapLikeWrapper({
     required this.postId,
+    required this.postOwnerId,
     required this.child,
     this.onTap,
   });
 
   final String postId;
+  final String postOwnerId;
   final Widget child;
   final VoidCallback? onTap;
 
@@ -386,12 +470,17 @@ class _DoubleTapLikeWrapperState extends ConsumerState<_DoubleTapLikeWrapper>
     final session = ref.read(authControllerProvider).session;
     if (session == null) return;
 
-    final isLiked =
-        ref.read(likeControllerProvider).statusFor(widget.postId).isLiked;
+    final isLiked = ref
+        .read(likeControllerProvider)
+        .statusFor(widget.postId)
+        .isLiked;
     if (!isLiked) {
-      ref.read(likeControllerProvider.notifier).toggle(
+      ref
+          .read(likeControllerProvider.notifier)
+          .toggle(
             postId: widget.postId,
             currentUserId: session.userId,
+            postOwnerId: widget.postOwnerId,
           );
     }
 
@@ -413,10 +502,7 @@ class _DoubleTapLikeWrapperState extends ConsumerState<_DoubleTapLikeWrapper>
               animation: _ctrl,
               builder: (context, child) => Opacity(
                 opacity: _opacity.value,
-                child: Transform.scale(
-                  scale: _scale.value,
-                  child: child,
-                ),
+                child: Transform.scale(scale: _scale.value, child: child),
               ),
               child: const Icon(
                 Icons.favorite,
@@ -446,7 +532,8 @@ class _CaptionText extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final caption = ref.watch(
+    final caption =
+        ref.watch(
           postControllerProvider.select(
             (s) => s.posts
                 .where((p) => p.id == postId)
@@ -569,8 +656,10 @@ class _ImageCarouselState extends State<_ImageCarousel> {
                 top: 12,
                 right: 12,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black54,
                     borderRadius: BorderRadius.circular(12),

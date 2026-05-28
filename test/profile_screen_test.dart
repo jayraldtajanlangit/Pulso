@@ -132,6 +132,9 @@ class FakeProfileRepository implements ProfileRepository {
   }
 
   @override
+  Future<List<ProfileModel>> searchProfiles(String query) async => const [];
+
+  @override
   Future<ProfileModel> upsertProfile(ProfileModel profile) async {
     upsertCalled = true;
     _profile = profile;

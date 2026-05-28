@@ -17,11 +17,11 @@ class MessageState {
   });
 
   const MessageState.initial()
-      : inbox = const [],
-        messages = const {},
-        isLoadingInbox = false,
-        isLoadingMessages = false,
-        isSending = false;
+    : inbox = const [],
+      messages = const {},
+      isLoadingInbox = false,
+      isLoadingMessages = false,
+      isSending = false;
 
   final List<ConversationModel> inbox;
   final Map<String, List<MessageModel>> messages;
@@ -102,14 +102,113 @@ class MessageController extends Notifier<MessageState> {
     );
   }
 
-  Future<void> sendMessage({
+  Future<String?> findExistingConversation({
+    required String currentUserId,
+    required String otherUserId,
+  }) {
+    return _repository.findExistingConversation(
+      currentUserId: currentUserId,
+      otherUserId: otherUserId,
+    );
+  }
+
+  Future<bool> sendMessage({
     required String conversationId,
     required String senderId,
     required String recipientId,
     String? body,
     String? sharedPostId,
+    bool notify = true,
   }) async {
     state = state.copyWith(isSending: true);
+    try {
+      final messages = await _sendMessageRows(
+        conversationId: conversationId,
+        senderId: senderId,
+        body: body,
+        sharedPostId: sharedPostId,
+      );
+      _appendToConversation(conversationId, messages);
+      state = state.copyWith(isSending: false);
+
+      if (notify) {
+        try {
+          await ref
+              .read(notificationRepositoryProvider)
+              .insertNotification(
+                recipientId: recipientId,
+                actorId: senderId,
+                type: 'message',
+                postId: sharedPostId,
+              );
+        } catch (_) {}
+      }
+      return true;
+    } catch (_) {
+      state = state.copyWith(isSending: false);
+      return false;
+    }
+  }
+
+  /// Send a message to a recipient when the conversation may not exist yet.
+  /// Throws on failure so callers can surface the error to the user.
+  Future<SentDirectMessage> sendDirectMessage({
+    required String recipientUserId,
+    required String senderId,
+    String? body,
+    String? sharedPostId,
+    bool notify = true,
+  }) async {
+    state = state.copyWith(isSending: true);
+    try {
+      final result = await _repository.sendDirectMessage(
+        recipientUserId: recipientUserId,
+        body: body,
+        sharedPostId: sharedPostId,
+      );
+      _appendToConversation(result.conversationId, [result.message]);
+      state = state.copyWith(isSending: false);
+
+      if (notify) {
+        try {
+          await ref
+              .read(notificationRepositoryProvider)
+              .insertNotification(
+                recipientId: recipientUserId,
+                actorId: senderId,
+                type: 'message',
+                postId: sharedPostId,
+              );
+        } catch (_) {}
+      }
+      return result;
+    } catch (e) {
+      state = state.copyWith(isSending: false);
+      rethrow;
+    }
+  }
+
+  void _appendToConversation(
+    String conversationId,
+    List<MessageModel> newMessages,
+  ) {
+    if (newMessages.isEmpty) return;
+    final updated = Map<String, List<MessageModel>>.from(state.messages);
+    final current = updated[conversationId] ?? const [];
+    final next = [...current];
+    for (final msg in newMessages) {
+      if (!next.any((m) => m.id == msg.id)) next.add(msg);
+    }
+    updated[conversationId] = next;
+    state = state.copyWith(messages: updated);
+  }
+
+  Future<List<MessageModel>> _sendMessageRows({
+    required String conversationId,
+    required String senderId,
+    String? body,
+    String? sharedPostId,
+  }) async {
     try {
       final msg = await _repository.sendMessage(
         conversationId: conversationId,
@@ -117,22 +216,24 @@ class MessageController extends Notifier<MessageState> {
         body: body,
         sharedPostId: sharedPostId,
       );
-      final updated = Map<String, List<MessageModel>>.from(state.messages);
-      final current = updated[conversationId] ?? [];
-      if (!current.any((m) => m.id == msg.id)) {
-        updated[conversationId] = [...current, msg];
-      }
-      state = state.copyWith(messages: updated, isSending: false);
-
-      try {
-        await ref.read(notificationRepositoryProvider).insertNotification(
-              recipientId: recipientId,
-              actorId: senderId,
-              type: 'message',
-            );
-      } catch (_) {}
+      return [msg];
     } catch (_) {
-      state = state.copyWith(isSending: false);
+      final trimmedBody = body?.trim();
+      final canFallback =
+          sharedPostId != null && trimmedBody != null && trimmedBody.isNotEmpty;
+      if (!canFallback) rethrow;
+
+      final postMsg = await _repository.sendMessage(
+        conversationId: conversationId,
+        senderId: senderId,
+        sharedPostId: sharedPostId,
+      );
+      final textMsg = await _repository.sendMessage(
+        conversationId: conversationId,
+        senderId: senderId,
+        body: trimmedBody,
+      );
+      return [postMsg, textMsg];
     }
   }
 

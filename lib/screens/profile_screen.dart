@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../post/post_model.dart';
 import '../providers/auth_providers.dart';
+import '../providers/bookmark_providers.dart';
 import '../providers/follow_providers.dart';
 import '../providers/post_providers.dart';
 import '../providers/profile_providers.dart';
@@ -60,6 +61,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileControllerProvider(widget.userId));
     final profilePosts = ref.watch(profilePostsProvider(widget.userId));
+    final savedPosts = ref.watch(savedPostsProvider(widget.userId));
     final stats = ref.watch(
       followControllerProvider.select((s) => s.statsFor(widget.userId)),
     );
@@ -239,11 +241,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                                 ),
                               ),
                       ),
-                      const Center(
-                        child: Text(
-                          'No saved posts',
-                          style: TextStyle(color: Color(0xFF9CA3AF)),
+                      savedPosts.when(
+                        loading: () =>
+                            const Center(child: CircularProgressIndicator()),
+                        error: (e, _) => Center(
+                          child: Text(
+                            'Failed to load saved posts',
+                            style: TextStyle(color: Colors.grey[500]),
+                          ),
                         ),
+                        data: (posts) => posts.isEmpty
+                            ? const _EmptySavedPosts()
+                            : _PostsGrid(
+                                posts: posts,
+                                onPostTap: (post) => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        PostDetailScreen(post: post),
+                                  ),
+                                ),
+                              ),
                       ),
                     ],
                   ),
@@ -332,6 +350,20 @@ class _EmptyPosts extends StatelessWidget {
     return const Center(
       child: Text(
         'No posts yet',
+        style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 16),
+      ),
+    );
+  }
+}
+
+class _EmptySavedPosts extends StatelessWidget {
+  const _EmptySavedPosts();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Text(
+        'No saved posts',
         style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 16),
       ),
     );

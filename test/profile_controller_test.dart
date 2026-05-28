@@ -9,18 +9,27 @@ import 'package:pulso/providers/services_providers.dart';
 import 'package:pulso/services/image_picker_service.dart';
 
 void main() {
-  group('ProfileController', () {
-    test('starts in loading state with no profile', () {
+  group('ProfileController (family)', () {
+    ProviderContainer makeContainer({
+      FakeProfileRepository? repo,
+      FakeImagePickerService? picker,
+    }) {
       final container = ProviderContainer.test(
         overrides: [
-          profileRepositoryProvider.overrideWithValue(FakeProfileRepository()),
+          profileRepositoryProvider.overrideWithValue(
+            repo ?? FakeProfileRepository(),
+          ),
           imagePickerServiceProvider.overrideWithValue(
-            FakeImagePickerService(),
+            picker ?? FakeImagePickerService(),
           ),
         ],
       );
       addTearDown(container.dispose);
+      return container;
+    }
 
+    test('starts in loading state with no profile', () {
+      final container = makeContainer();
       final state = container.read(profileControllerProvider('user-1'));
 
       expect(state.isLoading, isTrue);
@@ -28,21 +37,13 @@ void main() {
       expect(state.errorMessage, isNull);
     });
 
-    test('loadProfile fetches profile and clears loading', () async {
+    test('reload fetches profile and clears loading', () async {
       final repo = FakeProfileRepository();
-      final container = ProviderContainer.test(
-        overrides: [
-          profileRepositoryProvider.overrideWithValue(repo),
-          imagePickerServiceProvider.overrideWithValue(
-            FakeImagePickerService(),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
+      final container = makeContainer(repo: repo);
 
       await container
           .read(profileControllerProvider('user-1').notifier)
-          .loadProfile();
+          .reload();
 
       final state = container.read(profileControllerProvider('user-1'));
       expect(state.isLoading, isFalse);
@@ -50,21 +51,13 @@ void main() {
       expect(state.errorMessage, isNull);
     });
 
-    test('loadProfile sets errorMessage on repository failure', () async {
+    test('sets errorMessage on repository failure', () async {
       final repo = FakeProfileRepository(throwOnGet: true);
-      final container = ProviderContainer.test(
-        overrides: [
-          profileRepositoryProvider.overrideWithValue(repo),
-          imagePickerServiceProvider.overrideWithValue(
-            FakeImagePickerService(),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
+      final container = makeContainer(repo: repo);
 
       await container
           .read(profileControllerProvider('user-1').notifier)
-          .loadProfile();
+          .reload();
 
       final state = container.read(profileControllerProvider('user-1'));
       expect(state.isLoading, isFalse);
@@ -72,18 +65,29 @@ void main() {
       expect(state.errorMessage, isNotNull);
     });
 
+    test('different userIds get isolated state', () async {
+      final container = makeContainer();
+
+      await container
+          .read(profileControllerProvider('user-1').notifier)
+          .reload();
+      await container
+          .read(profileControllerProvider('user-2').notifier)
+          .reload();
+
+      final s1 = container.read(profileControllerProvider('user-1'));
+      final s2 = container.read(profileControllerProvider('user-2'));
+      expect(s1.profile?.id, 'user-1');
+      expect(s2.profile?.id, 'user-2');
+    });
+
     test('updateProfile upserts and updates state', () async {
       final repo = FakeProfileRepository();
-      final container = ProviderContainer.test(
-        overrides: [
-          profileRepositoryProvider.overrideWithValue(repo),
-          imagePickerServiceProvider.overrideWithValue(
-            FakeImagePickerService(),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
+      final container = makeContainer(repo: repo);
 
+      await container
+          .read(profileControllerProvider('user-1').notifier)
+          .reload();
       await container
           .read(profileControllerProvider('user-1').notifier)
           .updateProfile(
@@ -104,14 +108,11 @@ void main() {
       final picker = FakeImagePickerService(
         result: (bytes: Uint8List.fromList([1, 2, 3]), mimeType: 'image/jpeg'),
       );
-      final container = ProviderContainer.test(
-        overrides: [
-          profileRepositoryProvider.overrideWithValue(repo),
-          imagePickerServiceProvider.overrideWithValue(picker),
-        ],
-      );
-      addTearDown(container.dispose);
+      final container = makeContainer(repo: repo, picker: picker);
 
+      await container
+          .read(profileControllerProvider('user-1').notifier)
+          .reload();
       await container
           .read(profileControllerProvider('user-1').notifier)
           .pickAndUploadAvatar();
@@ -124,14 +125,7 @@ void main() {
 
     test('pickAndUploadAvatar does nothing when picker returns null', () async {
       final repo = FakeProfileRepository();
-      final picker = FakeImagePickerService();
-      final container = ProviderContainer.test(
-        overrides: [
-          profileRepositoryProvider.overrideWithValue(repo),
-          imagePickerServiceProvider.overrideWithValue(picker),
-        ],
-      );
-      addTearDown(container.dispose);
+      final container = makeContainer(repo: repo);
 
       await container
           .read(profileControllerProvider('user-1').notifier)
@@ -145,8 +139,6 @@ void main() {
     });
   });
 }
-
-// ── Fakes ──────────────────────────────────────────────────────────────────
 
 class FakeProfileRepository implements ProfileRepository {
   FakeProfileRepository({this.throwOnGet = false});
@@ -165,9 +157,10 @@ class FakeProfileRepository implements ProfileRepository {
   }
 
   @override
-  Future<ProfileModel> upsertProfile(ProfileModel profile) async {
-    return profile;
-  }
+  Future<List<ProfileModel>> searchProfiles(String query) async => const [];
+
+  @override
+  Future<ProfileModel> upsertProfile(ProfileModel profile) async => profile;
 
   @override
   Future<String> uploadAvatar(

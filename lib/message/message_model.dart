@@ -34,9 +34,21 @@ class MessageModel {
       sharedPostId: map['shared_post_id'] as String?,
       sharedPostImageUrl: post?['image_url'] as String?,
       sharedPostCaption: post?['caption'] as String?,
-      senderUsername: sender?['username'] as String?,
+      senderUsername: _profileName(sender),
       senderAvatarUrl: sender?['avatar_url'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
+}
+
+String? _profileName(Map<String, dynamic>? profile) {
+  final username = profile?['username'] as String?;
+  if (username != null && username.trim().isNotEmpty) return username;
+
+  final displayName = profile?['display_name'] as String?;
+  if (displayName != null && displayName.trim().isNotEmpty) {
+    return displayName;
+  }
+
+  return null;
 }

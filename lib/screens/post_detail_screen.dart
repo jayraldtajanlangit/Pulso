@@ -67,6 +67,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                   PostCard(
                     post: widget.post,
                     onDeleted: () => Navigator.of(context).pop(),
+                    onHidden: () => Navigator.of(context).pop(),
                   ),
                   const Divider(height: 1, thickness: 0.5),
                   CommentList(

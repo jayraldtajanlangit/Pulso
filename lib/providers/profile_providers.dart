@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../profile/profile_controller.dart';
-import 'profile_repository_provider.dart';
 
 export 'profile_repository_provider.dart';
 

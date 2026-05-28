@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -5,10 +7,15 @@ import 'package:pulso/auth/auth_repository.dart';
 import 'package:pulso/comment/comment_model.dart';
 import 'package:pulso/comment/comment_repository.dart';
 import 'package:pulso/like/like_repository.dart';
+import 'package:pulso/notification/notification_model.dart';
+import 'package:pulso/notification/notification_repository.dart';
 import 'package:pulso/post/post_model.dart';
+import 'package:pulso/post/post_repository.dart';
 import 'package:pulso/providers/auth_providers.dart';
 import 'package:pulso/providers/comment_providers.dart';
 import 'package:pulso/providers/like_providers.dart';
+import 'package:pulso/providers/notification_providers.dart';
+import 'package:pulso/providers/post_providers.dart';
 import 'package:pulso/widgets/post_card.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -35,7 +42,10 @@ void main() {
     required PostModel post,
     LikeRepository? likeRepo,
     CommentRepository? commentRepo,
+    PostRepository? postRepo,
+    NotificationRepository? notificationRepo,
     String currentUserId = 'u1',
+    VoidCallback? onHidden,
   }) {
     return ProviderScope(
       overrides: [
@@ -43,11 +53,17 @@ void main() {
         commentRepositoryProvider.overrideWithValue(
           commentRepo ?? _FakeCommentRepo(),
         ),
+        postRepositoryProvider.overrideWithValue(postRepo ?? _FakePostRepo()),
+        notificationRepositoryProvider.overrideWithValue(
+          notificationRepo ?? _FakeNotificationRepo(),
+        ),
         authRepositoryProvider.overrideWithValue(_StubAuth(currentUserId)),
       ],
       child: MaterialApp(
         home: Scaffold(
-          body: SingleChildScrollView(child: PostCard(post: post)),
+          body: SingleChildScrollView(
+            child: PostCard(post: post, onHidden: onHidden),
+          ),
         ),
       ),
     );
@@ -101,6 +117,94 @@ void main() {
     // Filled heart appears, provider toggle was invoked.
     expect(find.byIcon(Icons.favorite), findsWidgets);
     expect(likeRepo.toggleCalls, 1);
+  });
+
+  testWidgets('double-tap like notifies the post owner', (tester) async {
+    final post = _samplePost(userId: 'owner');
+    final notificationRepo = _FakeNotificationRepo();
+
+    await tester.pumpWidget(
+      buildCard(
+        post: post,
+        currentUserId: 'viewer',
+        notificationRepo: notificationRepo,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byType(PageView));
+    await tester.tap(find.byType(PageView));
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.byType(PageView));
+    await tester.pumpAndSettle();
+
+    expect(notificationRepo.recipientId, 'owner');
+    expect(notificationRepo.actorId, 'viewer');
+    expect(notificationRepo.type, 'like');
+    expect(notificationRepo.postId, 'p1');
+  });
+
+  testWidgets('owner more-options menu can delete a post', (tester) async {
+    final post = _samplePost(userId: 'u1');
+    final postRepo = _FakePostRepo();
+
+    await tester.pumpWidget(
+      buildCard(post: post, postRepo: postRepo, currentUserId: 'u1'),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete').last);
+    await tester.pumpAndSettle();
+
+    expect(postRepo.deletedPostId, 'p1');
+  });
+
+  testWidgets('non-owner more-options menu exposes report action', (
+    tester,
+  ) async {
+    final post = _samplePost(userId: 'owner');
+
+    await tester.pumpWidget(buildCard(post: post, currentUserId: 'viewer'));
+    await tester.pump();
+
+    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Report'), findsOneWidget);
+
+    await tester.tap(find.text('Report'));
+    await tester.pump();
+
+    expect(find.text('Post reported'), findsOneWidget);
+  });
+
+  testWidgets('more-options menu can hide a post', (tester) async {
+    final post = _samplePost(userId: 'owner');
+    var hidden = false;
+
+    await tester.pumpWidget(
+      buildCard(
+        post: post,
+        currentUserId: 'viewer',
+        onHidden: () => hidden = true,
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Hide post'), findsOneWidget);
+
+    await tester.tap(find.text('Hide post'));
+    await tester.pump();
+
+    expect(hidden, isTrue);
+    expect(find.text('Post hidden'), findsOneWidget);
   });
 }
 
@@ -186,6 +290,97 @@ class _FakeCommentRepo implements CommentRepository {
     required void Function(CommentModel comment) onCommentAdded,
     void Function(String commentId)? onCommentDeleted,
   }) => throw UnimplementedError();
+}
+
+class _FakePostRepo implements PostRepository {
+  String? deletedPostId;
+
+  @override
+  Future<List<PostModel>> getPosts(String userId) async => const [];
+
+  @override
+  Future<List<PostModel>> fetchFeed({int limit = 20, int offset = 0}) async =>
+      const [];
+
+  @override
+  Future<List<PostModel>> fetchFollowingFeed({
+    required List<String> followingIds,
+    int limit = 20,
+    int offset = 0,
+  }) async => const [];
+
+  @override
+  Future<List<PostModel>> getPostsByIds(List<String> ids) async => const [];
+
+  @override
+  Future<PostModel> createPost(
+    PostModel post, {
+    List<String> extraImageUrls = const [],
+  }) async => post;
+
+  @override
+  Future<PostModel> updatePost(String postId, {required String caption}) async {
+    return PostModel(
+      id: postId,
+      userId: 'u1',
+      caption: caption,
+      imageUrl: '',
+      imageUrls: const [],
+      createdAt: DateTime(2024),
+      updatedAt: DateTime(2024),
+    );
+  }
+
+  @override
+  Future<void> deletePost(String postId) async {
+    deletedPostId = postId;
+  }
+
+  @override
+  Future<String> uploadPostImage(
+    String userId,
+    Uint8List bytes,
+    String mimeType,
+  ) async => '';
+
+  @override
+  Future<List<String>> uploadPostImages(
+    String userId,
+    List<({Uint8List bytes, String mimeType})> images,
+  ) async => const [];
+}
+
+class _FakeNotificationRepo implements NotificationRepository {
+  String? recipientId;
+  String? actorId;
+  String? type;
+  String? postId;
+
+  @override
+  Future<List<NotificationModel>> fetchNotifications(String userId) async =>
+      const [];
+
+  @override
+  Future<void> insertNotification({
+    required String recipientId,
+    required String actorId,
+    required String type,
+    String? postId,
+  }) async {
+    this.recipientId = recipientId;
+    this.actorId = actorId;
+    this.type = type;
+    this.postId = postId;
+  }
+
+  @override
+  Future<void> markAllRead(String userId) async {}
+
+  @override
+  RealtimeChannel subscribe(
+    String userId,
+    void Function(NotificationModel) onNew,
+  ) => throw UnimplementedError();
 }
 
 class _StubAuth implements AuthRepository {

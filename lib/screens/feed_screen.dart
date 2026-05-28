@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../post/post_model.dart';
 import '../providers/auth_providers.dart';
+import '../providers/bookmark_providers.dart';
 import '../providers/comment_providers.dart';
 import '../providers/follow_providers.dart';
 import '../providers/like_providers.dart';
@@ -124,15 +125,21 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
     if (fingerprint == _lastHydratedFingerprint) return;
     _lastHydratedFingerprint = fingerprint;
 
-    try {
-      final ids = posts.map((p) => p.id).toList();
-      ref
-          .read(likeControllerProvider.notifier)
-          .loadForPosts(postIds: ids, currentUserId: userId);
-      ref.read(commentControllerProvider.notifier).loadCountsForPosts(ids);
-    } catch (_) {
-      // Supabase not configured. Skip hydration.
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      try {
+        final ids = posts.map((p) => p.id).toList();
+        ref
+            .read(likeControllerProvider.notifier)
+            .loadForPosts(postIds: ids, currentUserId: userId);
+        ref
+            .read(bookmarkControllerProvider.notifier)
+            .loadForPosts(postIds: ids, userId: userId);
+        ref.read(commentControllerProvider.notifier).loadCountsForPosts(ids);
+      } catch (_) {
+        // Supabase not configured. Skip hydration.
+      }
+    });
   }
 
   @override
@@ -258,10 +265,23 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
               SliverList(
                 delegate: SliverChildBuilderDelegate((context, i) {
                   final post = state.posts[i];
+                  final isBookmarked = userId == null
+                      ? false
+                      : ref.watch(
+                          bookmarkControllerProvider.select(
+                            (s) => s.isBookmarked(post.id),
+                          ),
+                        );
                   return Column(
                     children: [
                       PostCard(
                         post: post,
+                        isBookmarked: isBookmarked,
+                        onBookmark: userId == null
+                            ? null
+                            : () => ref
+                                  .read(bookmarkControllerProvider.notifier)
+                                  .toggle(postId: post.id, userId: userId),
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(

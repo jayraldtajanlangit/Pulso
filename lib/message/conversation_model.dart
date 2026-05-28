@@ -26,7 +26,7 @@ class ConversationModel {
     return ConversationModel(
       id: map['id'] as String,
       otherUserId: other?['id'] as String? ?? '',
-      otherUsername: other?['username'] as String?,
+      otherUsername: _profileName(other),
       otherAvatarUrl: other?['avatar_url'] as String?,
       lastMessageBody: map['last_message_body'] as String?,
       lastMessageIsOwn: map['last_message_is_own'] as bool? ?? false,
@@ -35,4 +35,16 @@ class ConversationModel {
       createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
+}
+
+String? _profileName(Map<String, dynamic>? profile) {
+  final username = profile?['username'] as String?;
+  if (username != null && username.trim().isNotEmpty) return username;
+
+  final displayName = profile?['display_name'] as String?;
+  if (displayName != null && displayName.trim().isNotEmpty) {
+    return displayName;
+  }
+
+  return null;
 }

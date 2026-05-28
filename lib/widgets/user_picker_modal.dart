@@ -6,8 +6,15 @@ import '../providers/auth_providers.dart';
 import '../providers/follow_providers.dart';
 import 'profile_avatar.dart';
 
-Future<ProfileModel?> showUserPickerModal(BuildContext context) {
-  return showModalBottomSheet<ProfileModel>(
+class SendToResult {
+  const SendToResult({required this.recipient, required this.message});
+
+  final ProfileModel recipient;
+  final String message;
+}
+
+Future<SendToResult?> showUserPickerModal(BuildContext context) {
+  return showModalBottomSheet<SendToResult>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.white,
@@ -30,11 +37,12 @@ class _UserPickerContentState extends ConsumerState<_UserPickerContent> {
   List<ProfileModel> _filtered = [];
   bool _isLoading = true;
   final _searchController = TextEditingController();
+  final _messageController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _loadFollowing();
+    _loadRecipients();
     _searchController.addListener(_onSearch);
   }
 
@@ -42,10 +50,11 @@ class _UserPickerContentState extends ConsumerState<_UserPickerContent> {
   void dispose() {
     _searchController.removeListener(_onSearch);
     _searchController.dispose();
+    _messageController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadFollowing() async {
+  Future<void> _loadRecipients() async {
     try {
       final userId = ref.read(authControllerProvider).session?.userId;
       if (userId == null) {
@@ -54,9 +63,12 @@ class _UserPickerContentState extends ConsumerState<_UserPickerContent> {
         return;
       }
 
-      final profiles = await ref
-          .read(followRepositoryProvider)
-          .getFollowingProfiles(userId);
+      final followRepository = ref.read(followRepositoryProvider);
+      final results = await Future.wait([
+        followRepository.getFollowingProfiles(userId),
+        followRepository.getFollowerProfiles(userId),
+      ]);
+      final profiles = _dedupeProfiles([...results[0], ...results[1]]);
 
       if (!mounted) return;
       setState(() {
@@ -68,6 +80,14 @@ class _UserPickerContentState extends ConsumerState<_UserPickerContent> {
       if (!mounted) return;
       setState(() => _isLoading = false);
     }
+  }
+
+  List<ProfileModel> _dedupeProfiles(List<ProfileModel> profiles) {
+    final byId = <String, ProfileModel>{};
+    for (final profile in profiles) {
+      byId.putIfAbsent(profile.id, () => profile);
+    }
+    return byId.values.toList();
   }
 
   void _onSearch() {
@@ -132,6 +152,29 @@ class _UserPickerContentState extends ConsumerState<_UserPickerContent> {
             ),
           ),
           const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              key: const Key('sendMessageField'),
+              controller: _messageController,
+              minLines: 1,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: 'Add a message...',
+                filled: true,
+                fillColor: const Color(0xFFF9FAFB),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -161,7 +204,12 @@ class _UserPickerContentState extends ConsumerState<_UserPickerContent> {
                         subtitle: profile.displayName != null
                             ? Text(profile.displayName!)
                             : null,
-                        onTap: () => Navigator.of(context).pop(profile),
+                        onTap: () => Navigator.of(context).pop(
+                          SendToResult(
+                            recipient: profile,
+                            message: _messageController.text.trim(),
+                          ),
+                        ),
                       );
                     },
                   ),
