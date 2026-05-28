@@ -1,0 +1,13 @@
+00:00 +0: loading C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_repository_test.dart
+00:00 +0: PostRepository (in-memory contract) createPost stores the post and returns it with images
+00:00 +1: PostRepository (in-memory contract) getPosts is scoped to a single user and reverse-chronological
+00:00 +2: PostRepository (in-memory contract) fetchFeed returns all posts newest-first with pagination
+00:00 +3: PostRepository (in-memory contract) fetchFollowingFeed returns empty when there are no follows
+00:00 +4: PostRepository (in-memory contract) fetchFollowingFeed only returns posts from followed users
+00:00 +5: PostRepository (in-memory contract) updatePost mutates caption and refreshes updatedAt
+00:00 +6: PostRepository (in-memory contract) deletePost removes the post from queries
+00:00 +7: PostRepository (in-memory contract) uploadPostImage returns a deterministic URL for the user
+00:00 +8: PostRepository (in-memory contract) uploadPostImages returns one URL per input image, in order
+00:00 +9: PostRepository (in-memory contract) getPostsByIds returns empty for an empty list
+00:00 +10: PostRepository (in-memory contract) getPostsByIds returns only the requested posts
+00:00 +11: All tests passed!

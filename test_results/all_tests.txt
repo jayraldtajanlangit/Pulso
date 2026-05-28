@@ -1,0 +1,302 @@
+00:00 +0: loading C:/Users/Jayrald/Desktop/Projects/Pulso/test/activity_screen_test.dart
+00:00 +0: C:/Users/Jayrald/Desktop/Projects/Pulso/test/activity_screen_test.dart: activity screen loads and renders notifications
+00:00 +1: C:/Users/Jayrald/Desktop/Projects/Pulso/test/activity_screen_test.dart: activity screen loads and renders notifications
+00:00 +2: C:/Users/Jayrald/Desktop/Projects/Pulso/test/activity_screen_test.dart: activity screen loads and renders notifications
+00:00 +3: C:/Users/Jayrald/Desktop/Projects/Pulso/test/activity_screen_test.dart: activity screen loads and renders notifications
+00:00 +4: C:/Users/Jayrald/Desktop/Projects/Pulso/test/activity_screen_test.dart: activity screen loads and renders notifications
+00:00 +5: C:/Users/Jayrald/Desktop/Projects/Pulso/test/activity_screen_test.dart: activity screen loads and renders notifications
+00:00 +6: C:/Users/Jayrald/Desktop/Projects/Pulso/test/activity_screen_test.dart: activity screen loads and renders notifications
+00:00 +7: C:/Users/Jayrald/Desktop/Projects/Pulso/test/activity_screen_test.dart: activity screen loads and renders notifications
+00:00 +8: C:/Users/Jayrald/Desktop/Projects/Pulso/test/activity_screen_test.dart: activity screen loads and renders notifications
+00:00 +9: C:/Users/Jayrald/Desktop/Projects/Pulso/test/activity_screen_test.dart: activity screen loads and renders notifications
+00:00 +10: C:/Users/Jayrald/Desktop/Projects/Pulso/test/activity_screen_test.dart: activity screen loads and renders notifications
+00:01 +11: C:/Users/Jayrald/Desktop/Projects/Pulso/test/comment_input_test.dart: Post button is disabled when the field is empty
+00:01 +12: C:/Users/Jayrald/Desktop/Projects/Pulso/test/comment_input_test.dart: Post button is disabled when the field is empty
+00:02 +13: C:/Users/Jayrald/Desktop/Projects/Pulso/test/comment_input_test.dart: Post button is disabled when the field is empty
+00:02 +14: C:/Users/Jayrald/Desktop/Projects/Pulso/test/comment_input_test.dart: Post button is disabled when the field is empty
+00:02 +15: C:/Users/Jayrald/Desktop/Projects/Pulso/test/comment_input_test.dart: Post button is disabled when the field is empty
+00:02 +16: C:/Users/Jayrald/Desktop/Projects/Pulso/test/comment_input_test.dart: Post button is disabled when the field is empty
+00:02 +17: C:/Users/Jayrald/Desktop/Projects/Pulso/test/comment_input_test.dart: Post button is disabled when the field is empty
+00:02 +18: C:/Users/Jayrald/Desktop/Projects/Pulso/test/comment_input_test.dart: Post button is disabled when the field is empty
+00:02 +19: C:/Users/Jayrald/Desktop/Projects/Pulso/test/comment_input_test.dart: Post button is disabled when the field is empty
+00:03 +20: C:/Users/Jayrald/Desktop/Projects/Pulso/test/comment_list_test.dart: shows empty state when no comments exist
+00:03 +21: C:/Users/Jayrald/Desktop/Projects/Pulso/test/explore_screen_search_test.dart: filters explore posts by username or caption
+00:03 +22: C:/Users/Jayrald/Desktop/Projects/Pulso/test/explore_screen_search_test.dart: filters explore posts by username or caption
+00:03 +23: C:/Users/Jayrald/Desktop/Projects/Pulso/test/explore_screen_search_test.dart: filters explore posts by username or caption
+00:03 +24: C:/Users/Jayrald/Desktop/Projects/Pulso/test/explore_screen_search_test.dart: filters explore posts by username or caption
+00:03 +25: C:/Users/Jayrald/Desktop/Projects/Pulso/test/explore_screen_search_test.dart: filters explore posts by username or caption
+00:03 +26: C:/Users/Jayrald/Desktop/Projects/Pulso/test/explore_screen_search_test.dart: filters explore posts by username or caption
+00:04 +27: C:/Users/Jayrald/Desktop/Projects/Pulso/test/explore_screen_search_test.dart: filters explore posts by username or caption
+00:04 +28: C:/Users/Jayrald/Desktop/Projects/Pulso/test/explore_screen_search_test.dart: filters explore posts by username or caption
+00:04 +29: C:/Users/Jayrald/Desktop/Projects/Pulso/test/explore_screen_search_test.dart: filters explore posts by username or caption
+00:04 +30: C:/Users/Jayrald/Desktop/Projects/Pulso/test/explore_screen_search_test.dart: filters explore posts by username or caption
+00:04 +31: C:/Users/Jayrald/Desktop/Projects/Pulso/test/explore_screen_search_test.dart: filters explore posts by username or caption
+00:04 +32: C:/Users/Jayrald/Desktop/Projects/Pulso/test/explore_screen_search_test.dart: filters explore posts by username or caption
+00:05 +33: C:/Users/Jayrald/Desktop/Projects/Pulso/test/explore_screen_search_test.dart: filters explore posts by username or caption
+00:05 +34: C:/Users/Jayrald/Desktop/Projects/Pulso/test/explore_screen_search_test.dart: filters explore posts by username or caption
+00:05 +35: C:/Users/Jayrald/Desktop/Projects/Pulso/test/explore_screen_search_test.dart: filters explore posts by username or caption
+00:05 +36: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_bookmark_test.dart: feed bookmark button toggles saved state
+00:05 +37: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_bookmark_test.dart: feed bookmark button toggles saved state
+00:05 +38: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_bookmark_test.dart: feed bookmark button toggles saved state
+00:05 +39: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_bookmark_test.dart: feed bookmark button toggles saved state
+00:05 +40: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_bookmark_test.dart: feed bookmark button toggles saved state
+00:05 +41: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_bookmark_test.dart: feed bookmark button toggles saved state
+00:05 +42: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_bookmark_test.dart: feed bookmark button toggles saved state
+00:06 +43: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_bookmark_test.dart: feed bookmark button toggles saved state
+00:06 +44: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_bookmark_test.dart: feed bookmark button toggles saved state
+00:06 +45: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_bookmark_test.dart: feed bookmark button toggles saved state
+00:06 +46: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_bookmark_test.dart: feed bookmark button toggles saved state
+00:06 +47: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_bookmark_test.dart: feed bookmark button toggles saved state
+[LikeController] subscribeToLikes failed: UnimplementedError
+[CommentController] global counts subscription failed: UnimplementedError
+00:06 +48: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_screen_scroll_test.dart: does not load another page when dragging upward from the bottom
+00:06 +49: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_screen_scroll_test.dart: does not load another page when dragging upward from the bottom
+00:06 +50: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_screen_scroll_test.dart: does not load another page when dragging upward from the bottom
+00:06 +51: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_screen_scroll_test.dart: does not load another page when dragging upward from the bottom
+00:06 +52: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_screen_scroll_test.dart: does not load another page when dragging upward from the bottom
+00:07 +53: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_screen_scroll_test.dart: does not load another page when dragging upward from the bottom
+00:07 +54: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_screen_scroll_test.dart: does not load another page when dragging upward from the bottom
+00:07 +55: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_screen_scroll_test.dart: does not load another page when dragging upward from the bottom
+00:07 +56: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_screen_scroll_test.dart: does not load another page when dragging upward from the bottom
+00:07 +57: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_screen_scroll_test.dart: does not load another page when dragging upward from the bottom
+00:07 +58: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_screen_scroll_test.dart: does not load another page when dragging upward from the bottom
+00:08 +59: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_screen_scroll_test.dart: does not load another page when dragging upward from the bottom
+00:08 +60: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_screen_scroll_test.dart: does not load another page when dragging upward from the bottom
+00:08 +61: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_screen_scroll_test.dart: does not load another page when dragging upward from the bottom
+00:08 +62: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_screen_scroll_test.dart: does not load another page when dragging upward from the bottom
+00:09 +63: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_screen_scroll_test.dart: does not load another page when dragging upward from the bottom
+00:09 +64: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_screen_scroll_test.dart: does not load another page when dragging upward from the bottom
+[LikeController] subscribeToLikes failed: UnimplementedError
+00:09 +65: C:/Users/Jayrald/Desktop/Projects/Pulso/test/feed_screen_scroll_test.dart: does not load another page when dragging upward from the bottom
+[CommentController] global counts subscription failed: UnimplementedError
+00:09 +66: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_card_test.dart: renders the post image, caption, and like count
+00:09 +67: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_card_test.dart: renders the post image, caption, and like count
+00:09 +68: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_card_test.dart: renders the post image, caption, and like count
+00:09 +69: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_card_test.dart: renders the post image, caption, and like count
+00:10 +70: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_card_test.dart: renders the post image, caption, and like count
+00:10 +71: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_card_test.dart: renders the post image, caption, and like count
+00:10 +72: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_card_test.dart: renders the post image, caption, and like count
+00:10 +73: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_card_test.dart: renders the post image, caption, and like count
+00:10 +74: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_card_test.dart: renders the post image, caption, and like count
+00:10 +75: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_card_test.dart: renders the post image, caption, and like count
+00:10 +76: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_card_test.dart: renders the post image, caption, and like count
+00:10 +77: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_card_test.dart: renders the post image, caption, and like count
+00:10 +78: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_card_test.dart: renders the post image, caption, and like count
+00:10 +79: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_card_test.dart: renders the post image, caption, and like count
+00:10 +80: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_card_test.dart: renders the post image, caption, and like count
+00:11 +81: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_creation_screen_test.dart: shows content field, add photo button, and submit button
+00:11 +82: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_creation_screen_test.dart: shows content field, add photo button, and submit button
+00:11 +83: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_creation_screen_test.dart: shows content field, add photo button, and submit button
+00:11 +84: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_creation_screen_test.dart: shows content field, add photo button, and submit button
+00:11 +85: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_creation_screen_test.dart: shows content field, add photo button, and submit button
+00:11 +86: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_creation_screen_test.dart: shows content field, add photo button, and submit button
+00:11 +87: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_creation_screen_test.dart: shows content field, add photo button, and submit button
+00:11 +88: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_creation_screen_test.dart: shows content field, add photo button, and submit button
+00:11 +89: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_creation_screen_test.dart: shows content field, add photo button, and submit button
+00:11 +90: C:/Users/Jayrald/Desktop/Projects/Pulso/test/post_creation_screen_test.dart: shows content field, add photo button, and submit button
+00:12 +91: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_avatar_test.dart: shows uppercase initial fallback when avatarUrl is null
+00:12 +92: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_avatar_test.dart: shows uppercase initial fallback when avatarUrl is null
+00:12 +93: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:12 +94: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:13 +95: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:13 +96: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:13 +97: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:13 +98: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:13 +99: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:13 +100: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:13 +101: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:13 +102: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:13 +103: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:13 +104: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:13 +105: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:13 +106: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:14 +107: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:14 +108: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:14 +109: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:14 +110: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:14 +111: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:14 +112: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:14 +113: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:14 +114: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_saved_posts_test.dart: saved tab shows bookmarked posts on the profile
+00:15 +115: C:/Users/Jayrald/Desktop/Projects/Pulso/test/profile_screen_test.dart: shows avatar and form fields after profile loads
+00:15 +116: C:/Users/Jayrald/Desktop/Projects/Pulso/test/story/story_viewer_screen_test.dart: holding the story pauses progress until released
+00:15 +117: C:/Users/Jayrald/Desktop/Projects/Pulso/test/story/story_viewer_screen_test.dart: holding the story pauses progress until released
+00:15 +118: C:/Users/Jayrald/Desktop/Projects/Pulso/test/story/story_viewer_screen_test.dart: holding the story pauses progress until released
+00:15 +119: C:/Users/Jayrald/Desktop/Projects/Pulso/test/story/story_viewer_screen_test.dart: holding the story pauses progress until released
+00:15 +120: C:/Users/Jayrald/Desktop/Projects/Pulso/test/story/story_viewer_screen_test.dart: holding the story pauses progress until released
+00:15 +121: C:/Users/Jayrald/Desktop/Projects/Pulso/test/story/story_viewer_screen_test.dart: holding the story pauses progress until released
+00:16 +122: C:/Users/Jayrald/Desktop/Projects/Pulso/test/story/story_viewer_screen_test.dart: holding the story pauses progress until released
+00:16 +123: C:/Users/Jayrald/Desktop/Projects/Pulso/test/story/story_viewer_screen_test.dart: holding the story pauses progress until released
+00:16 +124: C:/Users/Jayrald/Desktop/Projects/Pulso/test/widget_test.dart: shows setup guidance when Supabase is not configured
+00:16 +125: C:/Users/Jayrald/Desktop/Projects/Pulso/test/widget_test.dart: shows setup guidance when Supabase is not configured
+00:16 +126: C:/Users/Jayrald/Desktop/Projects/Pulso/test/widget_test.dart: shows setup guidance when Supabase is not configured
+00:17 +127: C:/Users/Jayrald/Desktop/Projects/Pulso/test/widget_test.dart: shows sign-in form when no user is signed in
+00:17 +128: C:/Users/Jayrald/Desktop/Projects/Pulso/test/widget_test.dart: calls sign in with entered credentials
+[LikeController] subscribeToLikes failed: ProviderException: Tried to use a provider that is in error state.
+
+A provider threw the following exception:
+Bad state: Supabase client not initialized
+
+The stack trace of the exception:
+#0      likeRepositoryProvider.<anonymous closure> (package:pulso/providers/like_providers.dart:9:23)
+#1      Provider.create (package:riverpod/src/providers/provider.dart:59:36)
+#2      $ProviderElement.create (package:riverpod/src/providers/provider.dart:343:32)
+#3      ProviderElement.buildState (package:riverpod/src/core/element.dart:684:28)
+#4      ProviderElement.mount (package:riverpod/src/core/element.dart:537:7)
+#5      ProviderElement.flush (package:riverpod/src/core/element.dart:640:7)
+#6      $ProviderBaseImpl._addListener (package:riverpod/src/core/provider/provider.dart:119:24)
+#7      ProviderContainer.listen (package:riverpod/src/core/provider_container.dart:960:26)
+#8      ProviderContainer.read (package:riverpod/src/core/provider_container.dart:917:17)
+#9      Ref.read (package:riverpod/src/core/ref.dart:540:30)
+#10     LikeController._repository (package:pulso/like/like_controller.dart:49:41)
+#11     LikeController.subscribe (package:pulso/like/like_controller.dart:71:18)
+#12     _FeedScreenState._initialLoad (package:pulso/screens/feed_screen.dart:67:12)
+#13     _FeedScreenState.initState.<anonymous closure> (package:pulso/screens/feed_screen.dart:38:57)
+#14     SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1430:15)
+#15     SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1357:11)
+#16     AutomatedTestWidgetsFlutterBinding.pump.<anonymous closure> (package:flutter_test/src/binding.dart:1960:9)
+#17     _rootRun (dart:async/zone_root.dart:35:13)
+#18     _CustomZone.run (dart:async/zone.dart:726:19)
+#19     TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#20     AutomatedTestWidgetsFlutterBinding.pump (package:flutter_test/src/binding.dart:1949:27)
+#21     WidgetTester.pump.<anonymous closure> (package:flutter_test/src/widget_tester.dart:652:53)
+#22     _rootRun (dart:async/zone_root.dart:35:13)
+#23     _CustomZone.run (dart:async/zone.dart:726:19)
+#24     TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#25     WidgetTester.pump (package:flutter_test/src/widget_tester.dart:652:27)
+#26     main.<anonymous closure> (file:///C:/Users/Jayrald/Desktop/Projects/Pulso/test/widget_test.dart:57:18)
+<asynchronous suspension>
+#27     testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#28     TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1682:5)
+<asynchronous suspension>
+#29     StackZoneSpecification._registerCallback.<anonymous closure> (package:stack_trace/src/stack_zone_specification.dart:114:42)
+<asynchronous suspension>
+
+[CommentController] global counts subscription failed: ProviderException: Tried to use a provider that is in error state.
+
+A provider threw the following exception:
+Bad state: Supabase client not initialized
+
+The stack trace of the exception:
+#0      commentRepositoryProvider.<anonymous closure> (package:pulso/providers/comment_providers.dart:9:23)
+#1      Provider.create (package:riverpod/src/providers/provider.dart:59:36)
+#2      $ProviderElement.create (package:riverpod/src/providers/provider.dart:343:32)
+#3      ProviderElement.buildState (package:riverpod/src/core/element.dart:684:28)
+#4      ProviderElement.mount (package:riverpod/src/core/element.dart:537:7)
+#5      ProviderElement.flush (package:riverpod/src/core/element.dart:640:7)
+#6      $ProviderBaseImpl._addListener (package:riverpod/src/core/provider/provider.dart:119:24)
+#7      ProviderContainer.listen (package:riverpod/src/core/provider_container.dart:960:26)
+#8      ProviderContainer.read (package:riverpod/src/core/provider_container.dart:917:17)
+#9      Ref.read (package:riverpod/src/core/ref.dart:540:30)
+#10     CommentController._repository (package:pulso/comment/comment_controller.dart:82:44)
+#11     CommentController.ensureGlobalCountsSubscription (package:pulso/comment/comment_controller.dart:109:30)
+#12     _FeedScreenState._initialLoad (package:pulso/screens/feed_screen.dart:75:12)
+#13     _FeedScreenState.initState.<anonymous closure> (package:pulso/screens/feed_screen.dart:38:57)
+#14     SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1430:15)
+#15     SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1357:11)
+#16     AutomatedTestWidgetsFlutterBinding.pump.<anonymous closure> (package:flutter_test/src/binding.dart:1960:9)
+#17     _rootRun (dart:async/zone_root.dart:35:13)
+#18     _CustomZone.run (dart:async/zone.dart:726:19)
+#19     TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#20     AutomatedTestWidgetsFlutterBinding.pump (package:flutter_test/src/binding.dart:1949:27)
+#21     WidgetTester.pump.<anonymous closure> (package:flutter_test/src/widget_tester.dart:652:53)
+#22     _rootRun (dart:async/zone_root.dart:35:13)
+#23     _CustomZone.run (dart:async/zone.dart:726:19)
+#24     TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#25     WidgetTester.pump (package:flutter_test/src/widget_tester.dart:652:27)
+#26     main.<anonymous closure> (file:///C:/Users/Jayrald/Desktop/Projects/Pulso/test/widget_test.dart:57:18)
+<asynchronous suspension>
+#27     testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#28     TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1682:5)
+<asynchronous suspension>
+#29     StackZoneSpecification._registerCallback.<anonymous closure> (package:stack_trace/src/stack_zone_specification.dart:114:42)
+<asynchronous suspension>
+
+00:18 +129: C:/Users/Jayrald/Desktop/Projects/Pulso/test/widget_test.dart: navigates from sign-in to sign-up screen
+00:18 +130: C:/Users/Jayrald/Desktop/Projects/Pulso/test/widget_test.dart: sign-up screen calls signUp with valid credentials
+[LikeController] subscribeToLikes failed: ProviderException: Tried to use a provider that is in error state.
+
+A provider threw the following exception:
+Bad state: Supabase client not initialized
+
+The stack trace of the exception:
+#0      likeRepositoryProvider.<anonymous closure> (package:pulso/providers/like_providers.dart:9:23)
+#1      Provider.create (package:riverpod/src/providers/provider.dart:59:36)
+#2      $ProviderElement.create (package:riverpod/src/providers/provider.dart:343:32)
+#3      ProviderElement.buildState (package:riverpod/src/core/element.dart:684:28)
+#4      ProviderElement.mount (package:riverpod/src/core/element.dart:537:7)
+#5      ProviderElement.flush (package:riverpod/src/core/element.dart:640:7)
+#6      $ProviderBaseImpl._addListener (package:riverpod/src/core/provider/provider.dart:119:24)
+#7      ProviderContainer.listen (package:riverpod/src/core/provider_container.dart:960:26)
+#8      ProviderContainer.read (package:riverpod/src/core/provider_container.dart:917:17)
+#9      Ref.read (package:riverpod/src/core/ref.dart:540:30)
+#10     LikeController._repository (package:pulso/like/like_controller.dart:49:41)
+#11     LikeController.subscribe (package:pulso/like/like_controller.dart:71:18)
+#12     _FeedScreenState._initialLoad (package:pulso/screens/feed_screen.dart:67:12)
+#13     _FeedScreenState.initState.<anonymous closure> (package:pulso/screens/feed_screen.dart:38:57)
+#14     SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1430:15)
+#15     SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1357:11)
+#16     AutomatedTestWidgetsFlutterBinding.pump.<anonymous closure> (package:flutter_test/src/binding.dart:1960:9)
+#17     _rootRun (dart:async/zone_root.dart:35:13)
+#18     _CustomZone.run (dart:async/zone.dart:726:19)
+#19     TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#20     AutomatedTestWidgetsFlutterBinding.pump (package:flutter_test/src/binding.dart:1949:27)
+#21     WidgetTester.pump.<anonymous closure> (package:flutter_test/src/widget_tester.dart:652:53)
+#22     _rootRun (dart:async/zone_root.dart:35:13)
+#23     _CustomZone.run (dart:async/zone.dart:726:19)
+#24     TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#25     WidgetTester.pump (package:flutter_test/src/widget_tester.dart:652:27)
+#26     main.<anonymous closure> (file:///C:/Users/Jayrald/Desktop/Projects/Pulso/test/widget_test.dart:114:18)
+<asynchronous suspension>
+#27     testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#28     TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1682:5)
+<asynchronous suspension>
+#29     StackZoneSpecification._registerCallback.<anonymous closure> (package:stack_trace/src/stack_zone_specification.dart:114:42)
+<asynchronous suspension>
+
+[CommentController] global counts subscription failed: ProviderException: Tried to use a provider that is in error state.
+
+A provider threw the following exception:
+Bad state: Supabase client not initialized
+
+The stack trace of the exception:
+#0      commentRepositoryProvider.<anonymous closure> (package:pulso/providers/comment_providers.dart:9:23)
+#1      Provider.create (package:riverpod/src/providers/provider.dart:59:36)
+#2      $ProviderElement.create (package:riverpod/src/providers/provider.dart:343:32)
+#3      ProviderElement.buildState (package:riverpod/src/core/element.dart:684:28)
+#4      ProviderElement.mount (package:riverpod/src/core/element.dart:537:7)
+#5      ProviderElement.flush (package:riverpod/src/core/element.dart:640:7)
+#6      $ProviderBaseImpl._addListener (package:riverpod/src/core/provider/provider.dart:119:24)
+#7      ProviderContainer.listen (package:riverpod/src/core/provider_container.dart:960:26)
+#8      ProviderContainer.read (package:riverpod/src/core/provider_container.dart:917:17)
+#9      Ref.read (package:riverpod/src/core/ref.dart:540:30)
+#10     CommentController._repository (package:pulso/comment/comment_controller.dart:82:44)
+#11     CommentController.ensureGlobalCountsSubscription (package:pulso/comment/comment_controller.dart:109:30)
+#12     _FeedScreenState._initialLoad (package:pulso/screens/feed_screen.dart:75:12)
+#13     _FeedScreenState.initState.<anonymous closure> (package:pulso/screens/feed_screen.dart:38:57)
+#14     SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1430:15)
+#15     SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1357:11)
+#16     AutomatedTestWidgetsFlutterBinding.pump.<anonymous closure> (package:flutter_test/src/binding.dart:1960:9)
+#17     _rootRun (dart:async/zone_root.dart:35:13)
+#18     _CustomZone.run (dart:async/zone.dart:726:19)
+#19     TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#20     AutomatedTestWidgetsFlutterBinding.pump (package:flutter_test/src/binding.dart:1949:27)
+#21     WidgetTester.pump.<anonymous closure> (package:flutter_test/src/widget_tester.dart:652:53)
+#22     _rootRun (dart:async/zone_root.dart:35:13)
+#23     _CustomZone.run (dart:async/zone.dart:726:19)
+#24     TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#25     WidgetTester.pump (package:flutter_test/src/widget_tester.dart:652:27)
+#26     main.<anonymous closure> (file:///C:/Users/Jayrald/Desktop/Projects/Pulso/test/widget_test.dart:114:18)
+<asynchronous suspension>
+#27     testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#28     TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1682:5)
+<asynchronous suspension>
+#29     StackZoneSpecification._registerCallback.<anonymous closure> (package:stack_trace/src/stack_zone_specification.dart:114:42)
+<asynchronous suspension>
+
+00:19 +131: C:/Users/Jayrald/Desktop/Projects/Pulso/test/widget_test.dart: sign-up screen rejects mismatched passwords
+00:19 +132: All tests passed!

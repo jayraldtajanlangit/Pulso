@@ -234,7 +234,7 @@ class FakePostRepository implements PostRepository {
       imageUrl: original.imageUrl,
       imageUrls: original.imageUrls,
       createdAt: original.createdAt,
-      updatedAt: DateTime.now().add(const Duration(milliseconds: 1)),
+      updatedAt: original.updatedAt.add(const Duration(seconds: 1)),
     );
     _posts[index] = updated;
     return updated;
