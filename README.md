@@ -65,7 +65,11 @@ flutter run ^
 
 <img width="400" height="820" alt="Screenshot 2026-05-28 at 9 18 10 PM" src="https://github.com/user-attachments/assets/ea3ff358-912f-47f2-ac8c-b2adcb8ae4f6" />
 
-<img width="1196" height="822" alt="Screenshot 2026-05-28 at 9 18 30 PM" src="https://github.com/user-attachments/assets/9b0554e5-434d-40b6-864e-9b0d1fbf0aa0" />
+<img width="1196" height="822" alt="Screenshot 2026-05-28 at 9 18 30 PM" src="https://github.com/user-attachments/assets/9b0554e5-434d-40b6-864e-9b0d1fbf0aa0" /> 
+
+<img width="409" height="819" alt="Screenshot 2026-05-28 at 9 30 31 PM" src="https://github.com/user-attachments/assets/1dda1d97-7157-40c5-9751-5e3c203912e5" />
+
+<img width="404" height="813" alt="Screenshot 2026-05-28 at 9 30 41 PM" src="https://github.com/user-attachments/assets/fa82eee1-18ab-4a1c-93d8-d679e51f9e9f" />
 
 
 
