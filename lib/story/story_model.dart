@@ -69,3 +69,27 @@ class StoryModel {
     );
   }
 }
+
+class StoryViewerModel {
+  const StoryViewerModel({
+    required this.viewerId,
+    required this.viewedAt,
+    this.username,
+    this.avatarUrl,
+  });
+
+  final String viewerId;
+  final DateTime viewedAt;
+  final String? username;
+  final String? avatarUrl;
+
+  factory StoryViewerModel.fromMap(Map<String, dynamic> map) {
+    final profile = map['profiles'] as Map<String, dynamic>?;
+    return StoryViewerModel(
+      viewerId: map['viewer_id'] as String,
+      viewedAt: DateTime.parse(map['viewed_at'] as String),
+      username: profile?['username'] as String?,
+      avatarUrl: profile?['avatar_url'] as String?,
+    );
+  }
+}

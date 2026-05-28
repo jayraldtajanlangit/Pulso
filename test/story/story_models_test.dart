@@ -56,6 +56,26 @@ void main() {
     });
   });
 
+  group('StoryViewerModel.fromMap', () {
+    test('parses a story view with joined profile details', () {
+      final map = {
+        'viewer_id': 'u2',
+        'viewed_at': '2026-05-28T01:30:00.000Z',
+        'profiles': {
+          'username': 'maria',
+          'avatar_url': 'https://example.com/maria.jpg',
+        },
+      };
+
+      final model = StoryViewerModel.fromMap(map);
+
+      expect(model.viewerId, 'u2');
+      expect(model.username, 'maria');
+      expect(model.avatarUrl, 'https://example.com/maria.jpg');
+      expect(model.viewedAt, DateTime.parse('2026-05-28T01:30:00.000Z'));
+    });
+  });
+
   group('MusicClipModel.fromMap', () {
     test('parses all fields', () {
       final map = {

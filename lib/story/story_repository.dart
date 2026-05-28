@@ -13,10 +13,9 @@ abstract class StoryRepository {
 
   Future<List<MusicClipModel>> fetchMusicClips();
 
-  Future<void> recordView({
-    required String storyId,
-    required String viewerId,
-  });
+  Future<List<StoryViewerModel>> fetchStoryViewers({required String storyId});
+
+  Future<void> recordView({required String storyId, required String viewerId});
 
   Future<StoryModel> createStory({
     required String userId,
@@ -83,8 +82,7 @@ class SupabaseStoryRepository implements StoryRepository {
             .eq('user_id', currentUserId)
             .inFilter('story_id', storyIds);
         for (final r in reactions as List) {
-          likedByUser
-              .add((r as Map<String, dynamic>)['story_id'] as String);
+          likedByUser.add((r as Map<String, dynamic>)['story_id'] as String);
         }
       } catch (_) {
         // story_reactions table may not exist yet — degrade gracefully.
@@ -124,6 +122,23 @@ class SupabaseStoryRepository implements StoryRepository {
 
     return (response as List)
         .map((r) => MusicClipModel.fromMap(r as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<List<StoryViewerModel>> fetchStoryViewers({
+    required String storyId,
+  }) async {
+    final response = await _client
+        .from('story_views')
+        .select(
+          'viewer_id, viewed_at, profiles!viewer_id(username, avatar_url)',
+        )
+        .eq('story_id', storyId)
+        .order('viewed_at', ascending: false);
+
+    return (response as List)
+        .map((r) => StoryViewerModel.fromMap(r as Map<String, dynamic>))
         .toList();
   }
 

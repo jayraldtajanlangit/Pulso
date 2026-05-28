@@ -328,8 +328,13 @@ CREATE POLICY "stories_insert_own"
 CREATE POLICY "stories_delete_own"
   ON stories FOR DELETE USING (auth.uid() = user_id);
 
-CREATE POLICY "story_views_select_all"
-  ON story_views FOR SELECT USING (true);
+DROP POLICY IF EXISTS "story_views_select_all" ON story_views;
+
+CREATE POLICY "story_views_select_viewer_or_story_owner"
+  ON story_views FOR SELECT USING (
+    auth.uid() = viewer_id
+    OR auth.uid() = (SELECT user_id FROM stories WHERE id = story_id)
+  );
 
 CREATE POLICY "story_views_insert_authenticated"
   ON story_views FOR INSERT WITH CHECK (auth.uid() = viewer_id);
@@ -378,4 +383,3 @@ CREATE POLICY "story_reactions_delete_own"
 
 ALTER PUBLICATION supabase_realtime ADD TABLE story_reactions;
 ''';
-

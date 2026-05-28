@@ -12,10 +12,12 @@ void main() {
   setUp(() => repo = MockStoryRepository());
 
   test('fetchActiveStories returns a map of userId to story list', () async {
-    when(() => repo.fetchActiveStories(
-          followingIds: any(named: 'followingIds'),
-          currentUserId: any(named: 'currentUserId'),
-        )).thenAnswer((_) async => {});
+    when(
+      () => repo.fetchActiveStories(
+        followingIds: any(named: 'followingIds'),
+        currentUserId: any(named: 'currentUserId'),
+      ),
+    ).thenAnswer((_) async => {});
 
     final result = await repo.fetchActiveStories(
       followingIds: ['u2'],
@@ -32,14 +34,26 @@ void main() {
   });
 
   test('recordView completes without error', () async {
-    when(() => repo.recordView(
-          storyId: any(named: 'storyId'),
-          viewerId: any(named: 'viewerId'),
-        )).thenAnswer((_) async {});
+    when(
+      () => repo.recordView(
+        storyId: any(named: 'storyId'),
+        viewerId: any(named: 'viewerId'),
+      ),
+    ).thenAnswer((_) async {});
 
     await expectLater(
       repo.recordView(storyId: 's1', viewerId: 'u1'),
       completes,
     );
+  });
+
+  test('fetchStoryViewers returns a list of viewer profiles', () async {
+    when(
+      () => repo.fetchStoryViewers(storyId: any(named: 'storyId')),
+    ).thenAnswer((_) async => []);
+
+    final result = await repo.fetchStoryViewers(storyId: 's1');
+
+    expect(result, isA<List<StoryViewerModel>>());
   });
 }
