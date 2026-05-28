@@ -1,5 +1,3 @@
-# PULSO - Community Social App
-
 ### Group Members: 
 
 - Tajanlangit, Jayrald
@@ -53,21 +51,24 @@ flutter run ^
 
 ## Screenshots of the app:
 
-<img width="388" height="778" alt="Screenshot 2026-05-28 at 6 21 56 PM" src="https://github.com/user-attachments/assets/5a325b73-feec-4734-9727-62a7cfbf6f91" />
+<img width="402" height="821" alt="Screenshot 2026-05-28 at 9 16 19 PM" src="https://github.com/user-attachments/assets/6016aec3-de92-427d-9440-8674a4379f9d" />
 
-<img width="370" height="781" alt="Screenshot 2026-05-28 at 6 22 18 PM" src="https://github.com/user-attachments/assets/11ae525e-3429-41f6-bd9c-f2a566186fb9" />
+<img width="389" height="810" alt="Screenshot 2026-05-28 at 9 16 39 PM" src="https://github.com/user-attachments/assets/633b904d-ad1f-4c19-95e3-894d5a5c9cdb" />
 
-<img width="384" height="782" alt="Screenshot 2026-05-28 at 6 22 41 PM" src="https://github.com/user-attachments/assets/c24e7344-9116-4b00-8a1c-fedacd0e6ddd" />
+<img width="388" height="819" alt="Screenshot 2026-05-28 at 9 17 02 PM" src="https://github.com/user-attachments/assets/5424c6f7-9366-48f6-8bb0-acb9abee5229" />
 
-<img width="386" height="794" alt="Screenshot 2026-05-28 at 6 23 04 PM" src="https://github.com/user-attachments/assets/d3a97bbf-7694-4e78-95b6-7ac6aada4166" />
+<img width="397" height="827" alt="Screenshot 2026-05-28 at 9 17 13 PM" src="https://github.com/user-attachments/assets/bff4c985-7b3c-49b8-83d2-46f18d76be36" />
 
-<img width="375" height="790" alt="Screenshot 2026-05-28 at 6 23 15 PM" src="https://github.com/user-attachments/assets/e2f01aae-c9be-4338-90d9-cf008aaeb7dd" />
+<img width="360" height="805" alt="Screenshot 2026-05-28 at 9 17 23 PM" src="https://github.com/user-attachments/assets/fcfa80a0-aa72-4ebf-bffb-c55dc90cc07e" /># PULSO - Community Social App
 
-<img width="374" height="783" alt="Screenshot 2026-05-28 at 6 23 32 PM" src="https://github.com/user-attachments/assets/c2e03540-a9f9-4ca6-8756-1ccca8906854" />
+<img width="395" height="828" alt="Screenshot 2026-05-28 at 9 17 58 PM" src="https://github.com/user-attachments/assets/b85465ad-1b3e-452c-915d-0c19b9e8ceb7" />
 
-<img width="381" height="785" alt="Screenshot 2026-05-28 at 6 23 55 PM" src="https://github.com/user-attachments/assets/03c35285-5f94-4de6-8ba0-c7f23f578fc0" />
+<img width="400" height="820" alt="Screenshot 2026-05-28 at 9 18 10 PM" src="https://github.com/user-attachments/assets/ea3ff358-912f-47f2-ac8c-b2adcb8ae4f6" />
 
-<img width="379" height="785" alt="Screenshot 2026-05-28 at 6 24 13 PM" src="https://github.com/user-attachments/assets/60083a73-c3ae-483b-a57c-518d4da0d819" />
+<img width="1196" height="822" alt="Screenshot 2026-05-28 at 9 18 30 PM" src="https://github.com/user-attachments/assets/9b0554e5-434d-40b6-864e-9b0d1fbf0aa0" />
+
+
+
 
 
 
