@@ -1,0 +1,75 @@
+<h2>Notifications Screen Layout</h2>
+<p class="subtitle">Which layout do you prefer for the notifications screen?</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:12px; font-size:12px;">
+      <div style="background:#f9fafb; border-radius:6px; padding:8px 10px; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+        <div style="width:32px;height:32px;border-radius:50%;background:#d1d5db;flex-shrink:0;"></div>
+        <div style="flex:1;">
+          <span style="font-weight:600;">juan_dela</span> liked your post
+          <div style="color:#9ca3af; font-size:10px;">2 min ago</div>
+        </div>
+        <div style="width:36px;height:36px;background:#e5e7eb;border-radius:4px;flex-shrink:0;"></div>
+      </div>
+      <div style="background:#f9fafb; border-radius:6px; padding:8px 10px; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+        <div style="width:32px;height:32px;border-radius:50%;background:#d1d5db;flex-shrink:0;"></div>
+        <div style="flex:1;">
+          <span style="font-weight:600;">maria_santos</span> commented: "Nice shot!"
+          <div style="color:#9ca3af; font-size:10px;">15 min ago</div>
+        </div>
+        <div style="width:36px;height:36px;background:#e5e7eb;border-radius:4px;flex-shrink:0;"></div>
+      </div>
+      <div style="background:#eef2ff; border-radius:6px; padding:8px 10px; margin-bottom:6px; display:flex; align-items:center; gap:8px; border-left:3px solid #6366f1;">
+        <div style="width:32px;height:32px;border-radius:50%;background:#a5b4fc;flex-shrink:0;"></div>
+        <div style="flex:1;">
+          <span style="font-weight:600;">pedro_reyes</span> started following you
+          <div style="color:#9ca3af; font-size:10px;">1 hr ago</div>
+        </div>
+        <div style="width:64px;height:24px;background:#6366f1;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;">Follow</div>
+      </div>
+      <div style="background:#f9fafb; border-radius:6px; padding:8px 10px; display:flex; align-items:center; gap:8px;">
+        <div style="width:32px;height:32px;border-radius:50%;background:#d1d5db;flex-shrink:0;"></div>
+        <div style="flex:1;">
+          <span style="font-weight:600;">ana_reyes</span> sent you a message
+          <div style="color:#9ca3af; font-size:10px;">3 hr ago</div>
+        </div>
+        <div style="width:8px;height:8px;border-radius:50%;background:#6366f1;flex-shrink:0;"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Flat list</h3>
+      <p>All notifications in a single chronological list. Unread rows have a colored left border. New follow shows inline Follow button.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:12px; font-size:12px;">
+      <div style="display:flex; gap:6px; margin-bottom:8px;">
+        <div style="flex:1; text-align:center; padding:4px 0; border-bottom:2px solid #6366f1; font-weight:600; font-size:11px; color:#6366f1;">All</div>
+        <div style="flex:1; text-align:center; padding:4px 0; border-bottom:1px solid #e5e7eb; font-size:11px; color:#9ca3af;">Likes</div>
+        <div style="flex:1; text-align:center; padding:4px 0; border-bottom:1px solid #e5e7eb; font-size:11px; color:#9ca3af;">Comments</div>
+        <div style="flex:1; text-align:center; padding:4px 0; border-bottom:1px solid #e5e7eb; font-size:11px; color:#9ca3af;">Follows</div>
+      </div>
+      <div style="background:#f9fafb; border-radius:6px; padding:8px 10px; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+        <div style="width:32px;height:32px;border-radius:50%;background:#d1d5db;flex-shrink:0;"></div>
+        <div style="flex:1;"><span style="font-weight:600;">juan_dela</span> liked your post<div style="color:#9ca3af; font-size:10px;">2 min ago</div></div>
+        <div style="width:36px;height:36px;background:#e5e7eb;border-radius:4px;flex-shrink:0;"></div>
+      </div>
+      <div style="background:#eef2ff; border-radius:6px; padding:8px 10px; margin-bottom:6px; display:flex; align-items:center; gap:8px; border-left:3px solid #6366f1;">
+        <div style="width:32px;height:32px;border-radius:50%;background:#a5b4fc;flex-shrink:0;"></div>
+        <div style="flex:1;"><span style="font-weight:600;">pedro_reyes</span> started following you<div style="color:#9ca3af; font-size:10px;">1 hr ago</div></div>
+        <div style="width:64px;height:24px;background:#6366f1;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;">Follow</div>
+      </div>
+      <div style="background:#f9fafb; border-radius:6px; padding:8px 10px; display:flex; align-items:center; gap:8px;">
+        <div style="width:32px;height:32px;border-radius:50%;background:#d1d5db;flex-shrink:0;"></div>
+        <div style="flex:1;"><span style="font-weight:600;">maria_santos</span> commented: "Nice!"<div style="color:#9ca3af; font-size:10px;">15 min ago</div></div>
+        <div style="width:36px;height:36px;background:#e5e7eb;border-radius:4px;flex-shrink:0;"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Tabbed list</h3>
+      <p>Tabs to filter by type (All / Likes / Comments / Follows). Same row design, but user can focus on one category.</p>
+    </div>
+  </div>
+</div>
